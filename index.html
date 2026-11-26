@@ -4,245 +4,446 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#090d18">
+  <meta name="theme-color" content="#08152F">
+  <meta name="description" content="C.B.Book Studio — Central de organização e desenvolvimento de projetos.">
   <title>C.B.Book Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-  <!-- AUTENTICAÇÃO -->
+  <!-- ACESSO LOCAL DEMONSTRATIVO -->
   <main id="loginView" class="auth-container">
+    <div class="auth-decoration"></div>
+
     <section class="auth-card">
+      <div class="login-logo">C.B</div>
+      <span class="eyebrow">CREATIVE PROJECT MANAGEMENT</span>
+      <h1>C.B.Book <span>Studio</span></h1>
+      <p class="auth-description">
+        Seu espaço para organizar ideias, desenvolver projetos e transformar planos em realizações.
+      </p>
 
-      <div class="auth-brand">
-        <div class="auth-logo">C.B</div>
-        <h1>C.B.Book <span>Studio</span></h1>
-        <p>Seu espaço para organizar e desenvolver projetos.</p>
-      </div>
-
-      <!-- LOGIN -->
       <div id="loginPanel">
-        <h2>Bem-vindo de volta</h2>
-        <p>Acesse sua conta para continuar.</p>
-
         <form id="loginForm">
           <label for="email">E-mail</label>
-          <input
-            type="email"
-            id="email"
-            placeholder="seu@email.com"
-            autocomplete="email"
-            required
-          >
+          <input id="email" type="email" placeholder="seu@email.com" required>
 
           <label for="password">Senha</label>
-          <input
-            type="password"
-            id="password"
-            placeholder="Sua senha"
-            autocomplete="current-password"
-            required
-          >
+          <input id="password" type="password" placeholder="Sua senha" required>
 
-          <button type="submit" id="loginBtn">Entrar</button>
+          <button id="loginBtn" class="btn primary full" type="submit">
+            Entrar no Studio
+          </button>
         </form>
 
-        <button type="button" id="forgotPasswordBtn" class="text-button">
-          Esqueci minha senha
-        </button>
+        <p id="loginMessage" class="message" aria-live="polite"></p>
 
-        <p id="loginMessage" class="auth-message" role="status"></p>
-
-        <div class="auth-switch">
-          Ainda não tem uma conta?
-          <button type="button" id="showSignupBtn">Criar conta</button>
+        <div class="auth-links">
+          <button id="showSignupBtn" class="text-button" type="button">
+            Criar acesso de teste
+          </button>
         </div>
       </div>
 
-      <!-- CADASTRO -->
-      <div id="signupPanel" hidden>
-        <h2>Criar sua conta</h2>
-        <p>Comece a organizar seus projetos.</p>
-
+      <div id="signupPanel" class="hidden">
         <form id="signupForm">
-          <label for="signupName">Nome completo</label>
-          <input
-            type="text"
-            id="signupName"
-            placeholder="Seu nome"
-            autocomplete="name"
-            required
-          >
+          <label for="signupName">Nome</label>
+          <input id="signupName" type="text" placeholder="Seu nome" required>
 
           <label for="signupEmail">E-mail</label>
-          <input
-            type="email"
-            id="signupEmail"
-            placeholder="seu@email.com"
-            autocomplete="email"
-            required
-          >
+          <input id="signupEmail" type="email" placeholder="seu@email.com" required>
 
           <label for="signupPassword">Senha</label>
-          <input
-            type="password"
-            id="signupPassword"
-            placeholder="Mínimo de 8 caracteres"
-            minlength="8"
-            autocomplete="new-password"
-            required
-          >
+          <input id="signupPassword" type="password" minlength="6" placeholder="Mínimo de 6 caracteres" required>
 
           <label for="signupPasswordConfirm">Confirmar senha</label>
-          <input
-            type="password"
-            id="signupPasswordConfirm"
-            placeholder="Digite a senha novamente"
-            minlength="8"
-            autocomplete="new-password"
-            required
-          >
+          <input id="signupPasswordConfirm" type="password" minlength="6" placeholder="Repita a senha" required>
 
-          <button type="submit" id="signupBtn">Criar minha conta</button>
+          <button id="signupBtn" class="btn primary full" type="submit">
+            Criar acesso
+          </button>
         </form>
 
-        <p id="signupMessage" class="auth-message" role="status"></p>
+        <p id="signupMessage" class="message" aria-live="polite"></p>
 
-        <div class="auth-switch">
-          Já possui uma conta?
-          <button type="button" id="showLoginBtn">Fazer login</button>
+        <div class="auth-links">
+          <button id="showLoginBtn" class="text-button" type="button">
+            Já tenho acesso
+          </button>
         </div>
       </div>
 
+      <div class="local-notice">
+        <span>◆</span>
+        <p>Versão de testes: seus dados ficam armazenados neste navegador.</p>
+      </div>
     </section>
+
+    <footer class="auth-footer">C.B.Book Studio · Seu universo de projetos</footer>
   </main>
 
-  <!-- APLICAÇÃO -->
-  <div id="appView" hidden>
 
-    <header class="topbar">
-      <div class="brand">
-        <h1>C.B.Book <span>Studio</span></h1>
-        <p>Central de projetos criativos</p>
+  <!-- APLICATIVO -->
+  <div id="appView" class="app-shell hidden">
+
+    <!-- MENU LATERAL -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="logo">C.B</div>
+        <div>
+          <strong>C.B.Book</strong>
+          <small>STUDIO</small>
+        </div>
       </div>
 
-      <div class="user-area">
-        <span id="userDisplayName"></span>
-        <button type="button" id="logoutBtn">Sair</button>
-      </div>
-    </header>
+      <div class="sidebar-label">MENU PRINCIPAL</div>
 
-    <main class="app-container">
+      <nav class="side-nav">
+        <button class="nav-item active" data-section="overviewSection">
+          <span>◈</span> Visão geral
+        </button>
 
-      <!-- NAVEGAÇÃO -->
-      <nav class="main-nav">
-        <button type="button" class="tab active" data-section="overviewSection">
-          Visão geral
+        <button class="nav-item" data-section="projectsSection">
+          <span>▦</span> Meus projetos
         </button>
-        <button type="button" class="tab" data-section="projectsSection">
-          Projetos
-        </button>
-        <button type="button" class="tab" data-section="documentsSection">
-          Documentos
+
+        <button class="nav-item" data-section="documentsSection">
+          <span>▤</span> Biblioteca de arquivos
         </button>
       </nav>
 
-      <!-- VISÃO GERAL -->
-      <section id="overviewSection" class="app-section panel active">
-        <div class="section-heading">
-          <div>
-            <h2>Visão geral</h2>
-            <p>Seu espaço de organização e desenvolvimento.</p>
+      <div class="sidebar-label project-menu-label">SEUS PROJETOS</div>
+      <div id="sidebarProjects" class="sidebar-projects"></div>
+
+      <div class="sidebar-bottom">
+        <div class="user-mini">
+          <div class="user-avatar" id="userAvatar">C</div>
+          <div class="user-mini-info">
+            <strong id="sidebarUserName">Usuário</strong>
+            <small>Workspace local</small>
           </div>
-          <button type="button" id="refreshBtn">Atualizar</button>
         </div>
+        <button id="logoutBtn" class="logout-button" type="button" title="Sair">
+          ↪
+        </button>
+      </div>
+    </aside>
 
-        <div class="stats-grid">
-          <article class="stat-card">
-            <span>Projetos</span>
-            <strong id="projectTotal">0</strong>
-          </article>
 
-          <article class="stat-card">
-            <span>Em andamento</span>
-            <strong id="activeTotal">0</strong>
-          </article>
+    <!-- CONTEÚDO PRINCIPAL -->
+    <div class="main-area">
 
-          <article class="stat-card">
-            <span>Etapas concluídas</span>
-            <strong id="doneTotal">0</strong>
-          </article>
-
-          <article class="stat-card">
-            <span>Documentos</span>
-            <strong id="docTotal">0</strong>
-          </article>
-        </div>
-
-        <h3>Seus projetos</h3>
-        <div id="overviewGrid" class="projects-grid"></div>
-      </section>
-
-      <!-- PROJETOS -->
-      <section id="projectsSection" class="app-section panel" hidden>
-        <div class="section-heading">
-          <div>
-            <h2>Projetos</h2>
-            <p>Gerencie seus espaços de trabalho.</p>
+      <header class="topbar">
+        <div class="topbar-left">
+          <button id="menuToggle" class="menu-toggle" type="button" aria-label="Abrir menu">
+            ☰
+          </button>
+          <div class="breadcrumb">
+            <span>C.B.Book Studio</span>
+            <span class="breadcrumb-divider">/</span>
+            <strong id="pageBreadcrumb">Visão geral</strong>
           </div>
         </div>
 
-        <div id="projectGrid" class="projects-grid"></div>
-      </section>
+        <div class="topbar-right">
+          <span class="local-status"><i></i> Modo local</span>
+          <div class="topbar-avatar" id="userDisplayName">C</div>
+        </div>
+      </header>
 
-      <!-- DOCUMENTOS -->
-      <section id="documentsSection" class="app-section panel" hidden>
-        <div class="section-heading">
-          <div>
-            <h2>Documentos</h2>
-            <p>Armazene materiais dos seus projetos.</p>
+
+      <main class="main-content">
+
+        <!-- VISÃO GERAL -->
+        <section id="overviewSection" class="app-section active">
+
+          <div class="hero">
+            <div class="hero-content">
+              <span class="eyebrow">CENTRAL DE DESENVOLVIMENTO</span>
+              <h2>Ideias organizadas.<br><span>Projetos em movimento.</span></h2>
+              <p>Um espaço para planejar, construir e acompanhar tudo o que você está desenvolvendo.</p>
+              <button class="btn yellow" id="heroNewProjectBtn" type="button">
+                + Novo projeto
+              </button>
+            </div>
+            <div class="hero-symbol">
+              <div class="hero-orbit orbit-one"></div>
+              <div class="hero-orbit orbit-two"></div>
+              <div class="hero-core">C.B</div>
+            </div>
+            <div class="version">STUDIO · LOCAL EDITION</div>
           </div>
-        </div>
 
-        <div class="document-controls">
-          <label for="filterProject">Filtrar por projeto</label>
-          <select id="filterProject">
-            <option value="">Todos os projetos</option>
-          </select>
-        </div>
+          <div class="section-heading">
+            <div>
+              <span class="eyebrow">ACOMPANHAMENTO</span>
+              <h2>Visão geral</h2>
+              <p>Resumo do seu ambiente de trabalho.</p>
+            </div>
+          </div>
 
-        <div class="document-upload">
-          <h3>Enviar novo arquivo</h3>
+          <div class="stats-grid">
+            <article class="stat-card">
+              <div class="stat-icon blue">▦</div>
+              <div>
+                <small>Projetos cadastrados</small>
+                <strong id="projectTotal">0</strong>
+              </div>
+            </article>
 
-          <label for="uploadProject">Projeto</label>
-          <select id="uploadProject" required></select>
+            <article class="stat-card">
+              <div class="stat-icon gold">◷</div>
+              <div>
+                <small>Em desenvolvimento</small>
+                <strong id="activeTotal">0</strong>
+              </div>
+            </article>
 
-          <label for="uploadCategory">Categoria</label>
-          <select id="uploadCategory">
-            <option value="document">Documento</option>
-            <option value="brief">Briefing</option>
-            <option value="reference">Referência</option>
-            <option value="note">Anotação</option>
-          </select>
+            <article class="stat-card">
+              <div class="stat-icon green">✓</div>
+              <div>
+                <small>Concluídos</small>
+                <strong id="doneTotal">0</strong>
+              </div>
+            </article>
 
-          <label for="fileInput">Arquivo</label>
-          <input
-            type="file"
-            id="fileInput"
-            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.webp,.svg"
-          >
+            <article class="stat-card">
+              <div class="stat-icon purple">▤</div>
+              <div>
+                <small>Documentos</small>
+                <strong id="docTotal">0</strong>
+              </div>
+            </article>
+          </div>
 
-          <button type="button" id="uploadBtn">Enviar arquivo</button>
-          <p id="uploadMessage" class="auth-message" role="status"></p>
-        </div>
+          <div class="dashboard-grid">
+            <section class="content-card dashboard-projects">
+              <div class="card-heading">
+                <div>
+                  <h3>Seus projetos</h3>
+                  <p>Continue de onde você parou.</p>
+                </div>
+                <button class="text-button" data-section="projectsSection" type="button">
+                  Ver todos →
+                </button>
+              </div>
+              <div id="overviewGrid" class="project-grid compact-grid"></div>
+            </section>
 
-        <h3>Arquivos armazenados</h3>
-        <div id="documentList"></div>
-      </section>
+            <section class="content-card activity-card">
+              <div class="card-heading">
+                <div>
+                  <h3>Atividades recentes</h3>
+                  <p>Últimas movimentações do Studio.</p>
+                </div>
+              </div>
+              <div id="recentActivity" class="recent-activity">
+                <div class="empty-state">Suas atividades aparecerão aqui.</div>
+              </div>
+            </section>
+          </div>
 
-    </main>
+        </section>
+
+
+        <!-- PROJETOS -->
+        <section id="projectsSection" class="app-section">
+
+          <div class="section-heading heading-with-action">
+            <div>
+              <span class="eyebrow">SEU ECOSSISTEMA CRIATIVO</span>
+              <h2>Meus projetos</h2>
+              <p>Organize seus projetos em espaços de trabalho independentes.</p>
+            </div>
+            <button id="newProjectBtn" class="btn primary" type="button">
+              + Criar projeto
+            </button>
+          </div>
+
+          <div id="projectCreatePanel" class="content-card create-project-panel hidden">
+            <div class="card-heading">
+              <div>
+                <h3>Novo projeto</h3>
+                <p>Defina as informações iniciais do projeto.</p>
+              </div>
+              <button id="cancelProjectBtn" class="icon-button" type="button">✕</button>
+            </div>
+
+            <form id="projectForm">
+              <div class="form-grid">
+                <div>
+                  <label for="projectName">Nome do projeto</label>
+                  <input id="projectName" type="text" placeholder="Ex.: Novo projeto" required>
+                </div>
+                <div>
+                  <label for="projectType">Categoria</label>
+                  <input id="projectType" type="text" placeholder="Ex.: Projeto editorial" required>
+                </div>
+                <div>
+                  <label for="projectStatus">Situação</label>
+                  <select id="projectStatus">
+                    <option value="Planejamento">Planejamento</option>
+                    <option value="Desenvolvimento">Desenvolvimento</option>
+                    <option value="Em recuperação">Em recuperação</option>
+                    <option value="Concluído">Concluído</option>
+                    <option value="Pausado">Pausado</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="projectColor">Identidade do projeto</label>
+                  <select id="projectColor">
+                    <option value="blue">Azul</option>
+                    <option value="gold">Dourado</option>
+                    <option value="green">Verde</option>
+                    <option value="purple">Roxo</option>
+                  </select>
+                </div>
+              </div>
+
+              <label for="projectGoal">Objetivo</label>
+              <textarea id="projectGoal" rows="3" placeholder="Qual é o propósito deste projeto?"></textarea>
+
+              <label for="projectNextAction">Próxima ação</label>
+              <input id="projectNextAction" type="text" placeholder="Qual é o próximo passo?">
+
+              <div class="form-actions">
+                <button id="cancelProjectBtn2" class="btn outline" type="button">Cancelar</button>
+                <button class="btn primary" type="submit">Salvar projeto</button>
+              </div>
+              <p id="projectMessage" class="message" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div id="projectGrid" class="project-grid"></div>
+
+        </section>
+
+
+        <!-- ESPAÇO DE TRABALHO INDIVIDUAL -->
+        <section id="workspaceSection" class="app-section">
+
+          <div class="workspace-header">
+            <button id="backToProjectsBtn" class="back-button" type="button">
+              ← Voltar aos projetos
+            </button>
+
+            <div class="workspace-title-row">
+              <div>
+                <span class="eyebrow">ESPAÇO DE TRABALHO</span>
+                <h2 id="workspaceProjectName">Projeto</h2>
+                <p id="workspaceProjectDescription"></p>
+              </div>
+              <span id="workspaceProjectStatus" class="tag">Planejamento</span>
+            </div>
+
+            <div class="workspace-progress">
+              <div class="progress">
+                <span id="workspaceProgressBar" style="width:0%"></span>
+              </div>
+              <small id="workspaceProgressText">0% concluído</small>
+            </div>
+          </div>
+
+          <nav class="workspace-tabs" id="workspaceTabs">
+            <button class="workspace-tab active" data-workspace="summary" type="button">◈ Resumo</button>
+            <button class="workspace-tab" data-workspace="tasks" type="button">☑ Tarefas</button>
+            <button class="workspace-tab" data-workspace="notes" type="button">▤ Anotações</button>
+            <button class="workspace-tab" data-workspace="calendar" type="button">▦ Calendário</button>
+            <button class="workspace-tab" data-workspace="history" type="button">◷ Histórico</button>
+            <button class="workspace-tab" data-workspace="files" type="button">▣ Documentos</button>
+          </nav>
+
+          <div id="workspaceContent" class="workspace-content">
+            <div class="empty-state">Selecione um projeto para abrir seu espaço de trabalho.</div>
+          </div>
+
+        </section>
+
+
+        <!-- BIBLIOTECA GERAL DE DOCUMENTOS -->
+        <section id="documentsSection" class="app-section">
+
+          <div class="section-heading">
+            <span class="eyebrow">CENTRAL DE ARQUIVOS</span>
+            <h2>Biblioteca de documentos</h2>
+            <p>Consulte os materiais associados aos seus projetos.</p>
+          </div>
+
+          <div class="content-card upload-card">
+            <div class="card-heading">
+              <div>
+                <h3>Adicionar documento</h3>
+                <p>Armazene arquivos diretamente neste navegador.</p>
+              </div>
+              <span class="upload-symbol">↑</span>
+            </div>
+
+            <form id="uploadForm">
+              <div class="form-grid">
+                <div>
+                  <label for="uploadProject">Projeto</label>
+                  <select id="uploadProject" required>
+                    <option value="">Selecione um projeto</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label for="uploadCategory">Categoria</label>
+                  <select id="uploadCategory">
+                    <option value="Geral">Geral</option>
+                    <option value="Referências">Referências</option>
+                    <option value="Planejamento">Planejamento</option>
+                    <option value="Produção">Produção</option>
+                    <option value="Imagens">Imagens</option>
+                    <option value="Outros">Outros</option>
+                  </select>
+                </div>
+              </div>
+
+              <label for="fileInput">Arquivo</label>
+              <input id="fileInput" type="file" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.webp,.svg">
+
+              <button id="uploadBtn" class="btn primary" type="submit">
+                Enviar documento
+              </button>
+              <p id="uploadMessage" class="message" aria-live="polite"></p>
+            </form>
+          </div>
+
+          <div class="content-card">
+            <div class="card-heading">
+              <div>
+                <h3>Arquivos armazenados</h3>
+                <p>Documentos disponíveis no ambiente local.</p>
+              </div>
+              <select id="filterProject" class="filter-select">
+                <option value="">Todos os projetos</option>
+              </select>
+            </div>
+            <div id="documentList" class="document-list">
+              <div class="empty-state">Nenhum documento armazenado.</div>
+            </div>
+          </div>
+
+        </section>
+
+      </main>
+
+      <footer class="app-footer">
+        <span>C.B.Book Studio</span>
+        <span>Organização · Criação · Desenvolvimento</span>
+      </footer>
+
+    </div>
   </div>
 
+  <div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
   <script type="module" src="app.js"></script>
+
 </body>
 </html>

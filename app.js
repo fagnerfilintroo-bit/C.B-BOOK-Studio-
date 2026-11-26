@@ -750,3 +750,354 @@ function toggleProjectCreate(show) {
 
   if (show) $("projectName")?.focus();
 }
+
+/* =========================================================
+   ÁREA DE TRABALHO
+========================================================= */
+
+function renderWorkspace() {
+  const project = currentProject();
+  const content = $("workspaceContent");
+
+  if (!project || !content) return;
+
+  document.querySelectorAll(".workspace-tab").forEach((tab) => {
+    tab.classList.toggle("active", tab.dataset.workspace === activeWorkspaceTab);
+  });
+
+  const progress = projectProgress(project);
+
+  if ($("workspaceProjectName")) {
+    $("workspaceProjectName").textContent = project.name;
+  }
+
+  if ($("workspaceProjectDescription")) {
+    $("workspaceProjectDescription").textContent = project.goal || project.type;
+  }
+
+  if ($("workspaceProjectStatus")) {
+    $("workspaceProjectStatus").textContent = project.status;
+  }
+
+  if ($("workspaceProgressBar")) {
+    $("workspaceProgressBar").style.width = `${progress}%`;
+  }
+
+  if ($("workspaceProgressText")) {
+    $("workspaceProgressText").textContent = `${progress}% concluído`;
+  }
+
+  if (activeWorkspaceTab === "summary") renderWorkspaceSummary(project, content);
+  if (activeWorkspaceTab === "tasks") renderWorkspaceTasks(project, content);
+  if (activeWorkspaceTab === "notes") renderWorkspaceNotes(project, content);
+  if (activeWorkspaceTab === "calendar") renderWorkspaceCalendar(project, content);
+  if (activeWorkspaceTab === "history") renderWorkspaceHistory(project, content);
+  if (activeWorkspaceTab === "files") renderWorkspaceFiles(project, content);
+}
+
+function renderWorkspaceSummary(project, content) {
+  const doneTasks = project.tasks.filter((task) => task.done).length;
+
+  content.innerHTML = `
+    <div class="workspace-grid">
+      <section class="content-card workspace-panel">
+        <h3>Visão do projeto</h3>
+        <p class="muted">${escapeHTML(project.goal || "O objetivo ainda não foi definido.")}</p>
+
+        <div class="summary-field">
+          <small>Próxima ação</small>
+          <strong>${escapeHTML(project.next_action || "Nenhuma ação definida.")}</strong>
+        </div>
+
+        <div class="summary-field">
+          <small>Área de atuação</small>
+          <strong>${escapeHTML(project.focus || "Não definida")}</strong>
+        </div>
+
+        <div class="summary-field">
+          <small>Tipo de projeto</small>
+          <strong>${escapeHTML(project.type)}</strong>
+        </div>
+
+        <div class="summary-field">
+          <small>Status</small>
+          <strong>${escapeHTML(project.status)}</strong>
+        </div>
+      </section>
+
+      <section class="content-card workspace-panel">
+        <h3>Indicadores</h3>
+        <div class="mini-stats">
+          <div><strong>${project.tasks.length}</strong><span>Tarefas</span></div>
+          <div><strong>${doneTasks}</strong><span>Concluídas</span></div>
+          <div><strong>${project.notes.length}</strong><span>Anotações</span></div>
+          <div><strong>${project.events.length}</strong><span>Eventos</span></div>
+        </div>
+      </section>
+    </div>
+
+    <section class="content-card workspace-panel">
+      <div class="section-heading">
+        <div>
+          <h3>Etapas do projeto</h3>
+          <p>Marque cada etapa conforme avançar.</p>
+        </div>
+      </div>
+
+      ${project.stages.length ? project.stages.map((stage) => `
+        <label class="stage-item">
+          <input type="checkbox" data-action="toggle-stage" data-id="${stage.id}" ${stage.done ? "checked" : ""}>
+          <span>${escapeHTML(stage.title)}</span>
+          <button type="button" class="icon-button" data-action="delete-stage" data-id="${stage.id}" title="Excluir etapa">×</button>
+        </label>
+      `).join("") : `<p class="empty-state">Este projeto ainda não possui etapas.</p>`}
+
+      <form id="stageForm" class="inline-form">
+        <input id="stageTitle" type="text" placeholder="Adicionar uma etapa..." required>
+        <button class="btn primary" type="submit">Adicionar</button>
+      </form>
+    </section>
+
+    <section class="content-card workspace-panel">
+      <h3>Editar informações</h3>
+
+      <form id="projectEditForm" class="form-grid">
+        <label>Nome do projeto
+          <input id="editProjectName" value="${escapeHTML(project.name)}" required>
+        </label>
+
+        <label>Tipo
+          <input id="editProjectType" value="${escapeHTML(project.type)}">
+        </label>
+
+        <label>Status
+          <select id="editProjectStatus">
+            ${["Planejamento", "Desenvolvimento", "Em andamento", "Em recuperação", "Pausado", "Concluído", "Arquivado"].map((status) =>
+              `<option ${project.status === status ? "selected" : ""}>${status}</option>`
+            ).join("")}
+          </select>
+        </label>
+
+        <label>Cor de identificação
+          <select id="editProjectColor">
+            <option value="blue" ${project.color === "blue" ? "selected" : ""}>Azul</option>
+            <option value="green" ${project.color === "green" ? "selected" : ""}>Verde</option>
+            <option value="gold" ${project.color === "gold" ? "selected" : ""}>Dourado</option>
+            <option value="purple" ${project.color === "purple" ? "selected" : ""}>Roxo</option>
+          </select>
+        </label>
+
+        <label class="full-field">Objetivo
+          <textarea id="editProjectGoal" rows="3">${escapeHTML(project.goal)}</textarea>
+        </label>
+
+        <label class="full-field">Próxima ação
+          <textarea id="editProjectNext" rows="2">${escapeHTML(project.next_action)}</textarea>
+        </label>
+
+        <label class="full-field">Foco / áreas
+          <input id="editProjectFocus" value="${escapeHTML(project.focus)}">
+        </label>
+
+        <div class="full-field">
+          <button class="btn primary" type="submit">Salvar alterações</button>
+        </div>
+      </form>
+    </section>
+  `;
+}
+
+function renderWorkspaceTasks(project, content) {
+  const tasks = [...project.tasks].sort((a, b) => {
+    if (a.done !== b.done) return a.done ? 1 : -1;
+    return (a.due || "9999").localeCompare(b.due || "9999");
+  });
+
+  content.innerHTML = `
+    <section class="content-card workspace-panel">
+      <h3>Adicionar tarefa</h3>
+
+      <form id="taskForm" class="form-grid">
+        <label class="full-field">O que precisa ser feito?
+          <input id="taskTitle" placeholder="Ex.: Preparar primeira publicação" required>
+        </label>
+
+        <label>Prazo
+          <input id="taskDue" type="date">
+        </label>
+
+        <label>Prioridade
+          <select id="taskPriority">
+            <option value="Normal">Normal</option>
+            <option value="Alta">Alta</option>
+            <option value="Baixa">Baixa</option>
+          </select>
+        </label>
+
+        <div class="full-field">
+          <button class="btn primary" type="submit">Adicionar tarefa</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="content-card workspace-panel">
+      <div class="section-heading">
+        <div>
+          <h3>Lista de tarefas</h3>
+          <p>${tasks.filter((task) => task.done).length} de ${tasks.length} concluídas</p>
+        </div>
+      </div>
+
+      ${tasks.length ? tasks.map((task) => `
+        <div class="task-item ${task.done ? "completed" : ""}">
+          <input type="checkbox" data-action="toggle-task" data-id="${task.id}" ${task.done ? "checked" : ""}>
+          <div class="task-main">
+            <strong>${escapeHTML(task.title)}</strong>
+            <small>${task.due ? `Prazo: ${formatDate(task.due)}` : "Sem prazo"} · Prioridade: ${escapeHTML(task.priority || "Normal")}</small>
+          </div>
+          <button class="icon-button" data-action="delete-task" data-id="${task.id}" title="Excluir tarefa">×</button>
+        </div>
+      `).join("") : `<p class="empty-state">Nenhuma tarefa cadastrada. Adicione a primeira acima.</p>`}
+    </section>
+  `;
+}
+
+function renderWorkspaceNotes(project, content) {
+  content.innerHTML = `
+    <section class="content-card workspace-panel">
+      <h3>Nova anotação</h3>
+
+      <form id="noteForm" class="form-grid">
+        <label class="full-field">Título
+          <input id="noteTitle" placeholder="Título da anotação" required>
+        </label>
+
+        <label class="full-field">Conteúdo
+          <textarea id="noteContent" rows="5" placeholder="Registre ideias, decisões e informações importantes..." required></textarea>
+        </label>
+
+        <div class="full-field">
+          <button class="btn primary" type="submit">Salvar anotação</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="content-card workspace-panel">
+      <h3>Anotações do projeto</h3>
+
+      ${project.notes.length ? project.notes.map((note) => `
+        <article class="note-item">
+          <div class="note-header">
+            <strong>${escapeHTML(note.title)}</strong>
+            <button class="icon-button" data-action="delete-note" data-id="${note.id}" title="Excluir anotação">×</button>
+          </div>
+          <p>${escapeHTML(note.content).replace(/\n/g, "<br>")}</p>
+          <small>${formatDateTime(note.date)}</small>
+        </article>
+      `).join("") : `<p class="empty-state">As anotações deste projeto aparecerão aqui.</p>`}
+    </section>
+  `;
+}
+
+function renderWorkspaceCalendar(project, content) {
+  const events = [...project.events].sort((a, b) => a.date.localeCompare(b.date));
+
+  content.innerHTML = `
+    <section class="content-card workspace-panel">
+      <h3>Adicionar compromisso</h3>
+
+      <form id="eventForm" class="form-grid">
+        <label class="full-field">Título
+          <input id="eventTitle" placeholder="Ex.: Reunião de planejamento" required>
+        </label>
+
+        <label>Data
+          <input id="eventDate" type="date" required>
+        </label>
+
+        <label class="full-field">Descrição
+          <textarea id="eventDescription" rows="2" placeholder="Detalhes do compromisso (opcional)"></textarea>
+        </label>
+
+        <div class="full-field">
+          <button class="btn primary" type="submit">Adicionar ao calendário</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="content-card workspace-panel">
+      <h3>Agenda do projeto</h3>
+
+      ${events.length ? events.map((event) => `
+        <div class="calendar-item">
+          <div class="calendar-date">
+            <strong>${new Date(event.date + "T12:00:00").getDate()}</strong>
+            <small>${new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR", { month: "short" })}</small>
+          </div>
+
+          <div class="calendar-main">
+            <strong>${escapeHTML(event.title)}</strong>
+            <p>${escapeHTML(event.description || "")}</p>
+            <small>${formatDate(event.date)}</small>
+          </div>
+
+          <button class="icon-button" data-action="delete-event" data-id="${event.id}" title="Excluir evento">×</button>
+        </div>
+      `).join("") : `<p class="empty-state">Nenhum compromisso cadastrado.</p>`}
+    </section>
+  `;
+}
+
+function renderWorkspaceHistory(project, content) {
+  content.innerHTML = `
+    <section class="content-card workspace-panel">
+      <h3>Histórico de atividades</h3>
+
+      ${project.history.length ? project.history.map((item) => `
+        <div class="history-item">
+          <div class="activity-marker"></div>
+          <div>
+            <strong>${escapeHTML(item.title)}</strong>
+            <p>${escapeHTML(item.description || "")}</p>
+            <small>${formatDateTime(item.date)}</small>
+          </div>
+        </div>
+      `).join("") : `<p class="empty-state">As alterações e atividades deste projeto aparecerão aqui.</p>`}
+    </section>
+  `;
+}
+
+function renderWorkspaceFiles(project, content) {
+  const projectDocs = documents.filter((doc) => doc.project_id === project.id);
+
+  content.innerHTML = `
+    <section class="content-card workspace-panel">
+      <h3>Adicionar documento</h3>
+
+      <form id="workspaceUploadForm" class="form-grid">
+        <label class="full-field">Selecionar arquivo
+          <input id="workspaceFileInput" type="file" required accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.webp,.svg">
+        </label>
+
+        <label class="full-field">Categoria
+          <select id="workspaceFileCategory">
+            <option value="Geral">Geral</option>
+            <option value="Referências">Referências</option>
+            <option value="Planejamento">Planejamento</option>
+            <option value="Produção">Produção</option>
+            <option value="Final">Final</option>
+          </select>
+        </label>
+
+        <div class="full-field">
+          <button class="btn primary" type="submit">Enviar documento</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="content-card workspace-panel">
+      <h3>Documentos deste projeto</h3>
+      ${renderDocumentItems(projectDocs)}
+    </section>
+  `;
+}

@@ -1,111 +1,306 @@
 
-import { supabase } from "./supabase.js";
-
-const BUCKET = "studio-files";
+const DB_NAME = "cbbook_studio_local";
+const DB_VERSION = 1;
+const STORE_NAME = "documents";
 const MAX_FILE_SIZE = 25 * 1024 * 1024;
 
-const allowedTypes = [
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "text/plain",
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/svg+xml"
-];
+const allowedTypes = {
+  pdf: "application/pdf",
+  doc: "application/msword",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  txt: "text/plain",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  svg: "image/svg+xml"
+};
 
-export async function uploadDocument(file, projectId, category) {
-  if (!file) throw new Error("Selecione um arquivo.");
+function getExtension(filename) {
+  return filename.split(".").pop().toLowerCase();
+}
+
+function getMimeType(file) {
+  const extension = getExtension(file.name);
+  return file.type || allowedTypes[extension] || "";
+}
+
+function createId() {
+  if (crypto.randomUUID) return crypto.randomUUID();
+
+  return "doc-" + Date.now() + "-" +
+    Math.random().toString(36).slice(2);
+}
+
+/* =================================
+   BANCO DE DADOS LOCAL
+================================= */
+
+function openDatabase() {
+  return new Promise((resolve, reject) => {
+    if (!("indexedDB" in window)) {
+      reject(new Error("Este navegador não oferece suporte ao armazenamento local."));
+      return;
+    }
+
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = event => {
+      const database = event.target.result;
+
+      if (!database.objectStoreNames.contains(STORE_NAME)) {
+        const store = database.createObjectStore(STORE_NAME, {
+          keyPath: "id"
+        });
+
+        store.createIndex("project_id", "project_id", {
+          unique: false
+        });
+
+        store.createIndex("created_at", "created_at", {
+          unique: false
+        });
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+
+    request.onerror = () => {
+      reject(new Error("Não foi possível abrir o armazenamento de documentos."));
+    };
+
+    request.onblocked = () => {
+      reject(new Error("Feche outras abas do Studio e tente novamente."));
+    };
+  });
+}
+
+async function getDocumentRecord(id) {
+  const database = await openDatabase();
+
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+    const request = store.get(id);
+
+    request.onsuccess = () => resolve(request.result || null);
+
+    request.onerror = () => {
+      reject(new Error("Não foi possível localizar o documento."));
+    };
+
+    transaction.oncomplete = () => database.close();
+    transaction.onerror = () => database.close();
+  });
+}
+
+/* =================================
+   ENVIAR DOCUMENTO
+================================= */
+
+export async function uploadDocument(file, projectId, category = "Geral") {
+  if (!file) {
+    throw new Error("Selecione um arquivo.");
+  }
+
+  if (!projectId) {
+    throw new Error("Selecione o projeto ao qual o arquivo pertence.");
+  }
 
   if (file.size > MAX_FILE_SIZE) {
     throw new Error("O arquivo ultrapassa o limite de 25 MB.");
   }
 
-  if (!allowedTypes.includes(file.type)) {
+  const extension = getExtension(file.name);
+  const mimeType = getMimeType(file);
+
+  if (!allowedTypes[extension] || !mimeType) {
     throw new Error("Formato de arquivo não permitido.");
   }
 
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
+  const database = await openDatabase();
 
-  if (!user) throw new Error("Faça login novamente.");
+  const document = {
+    id: createId(),
+    project_id: projectId,
+    category: category || "Geral",
+    file_name: file.name,
+    mime_type: mimeType,
+    file_size: file.size,
+    created_at: new Date().toISOString(),
+    storage_path: "",
+    file: file
+  };
 
-  const safeName = file.name
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9._-]/g, "_");
+  document.storage_path = document.id;
 
-  const path = `${user.id}/${projectId}/${category}/${crypto.randomUUID()}-${safeName}`;
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
 
-  const { error: storageError } = await supabase.storage
-    .from(BUCKET)
-    .upload(path, file, {
-      cacheControl: "3600",
-      upsert: false
-    });
+    store.add(document);
 
-  if (storageError) throw storageError;
+    transaction.oncomplete = () => {
+      database.close();
 
-  const { data, error } = await supabase
-    .from("studio_documents")
-    .insert({
-      user_id: user.id,
-      project_id: projectId,
-      category,
-      file_name: file.name,
-      storage_path: path,
-      mime_type: file.type,
-      file_size: file.size
-    })
-    .select()
-    .single();
+      const { file: storedFile, ...metadata } = document;
+      resolve(metadata);
+    };
 
-  if (error) {
-    await supabase.storage.from(BUCKET).remove([path]);
-    throw error;
-  }
+    transaction.onerror = () => {
+      database.close();
+      reject(new Error("Não foi possível salvar o arquivo no navegador."));
+    };
 
-  return data;
+    transaction.onabort = () => {
+      database.close();
+      reject(new Error("O armazenamento do arquivo foi cancelado."));
+    };
+  });
 }
+
+/* =================================
+   LISTAR DOCUMENTOS
+================================= */
 
 export async function listDocuments(projectId = "") {
-  let query = supabase
-    .from("studio_documents")
-    .select("*")
-    .order("created_at", { ascending: false });
+  const database = await openDatabase();
 
-  if (projectId) {
-    query = query.eq("project_id", projectId);
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, "readonly");
+    const store = transaction.objectStore(STORE_NAME);
+
+    const request = projectId
+      ? store.index("project_id").getAll(projectId)
+      : store.getAll();
+
+    request.onsuccess = () => {
+      const documents = (request.result || [])
+        .sort((a, b) =>
+          new Date(b.created_at) - new Date(a.created_at)
+        )
+        .map(({ file, ...metadata }) => metadata);
+
+      resolve(documents);
+    };
+
+    request.onerror = () => {
+      reject(new Error("Não foi possível listar os documentos."));
+    };
+
+    transaction.oncomplete = () => database.close();
+    transaction.onerror = () => database.close();
+  });
+}
+
+/* =================================
+   ABRIR OU BAIXAR DOCUMENTO
+================================= */
+
+export async function openDocument(documentOrId) {
+  const id = typeof documentOrId === "string"
+    ? documentOrId
+    : documentOrId?.id || documentOrId?.storage_path;
+
+  if (!id) {
+    throw new Error("Documento não identificado.");
   }
 
-  const { data, error } = await query;
+  // Abrimos a janela antes da consulta para reduzir
+  // o risco de bloqueio de pop-ups pelo navegador.
+  const previewWindow = window.open("about:blank", "_blank");
 
-  if (error) throw error;
-  return data || [];
+  if (previewWindow) {
+    previewWindow.opener = null;
+  }
+
+  try {
+    const document = await getDocumentRecord(id);
+
+    if (!document || !document.file) {
+      throw new Error("Arquivo não encontrado no armazenamento local.");
+    }
+
+    const blob = document.file instanceof Blob
+      ? document.file
+      : new Blob([document.file], {
+          type: document.mime_type
+        });
+
+    const objectUrl = URL.createObjectURL(blob);
+    const extension = getExtension(document.file_name);
+
+    const previewable = [
+      "application/pdf",
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "text/plain"
+    ].includes(document.mime_type);
+
+    if (previewable && previewWindow) {
+      previewWindow.location.href = objectUrl;
+      return;
+    }
+
+    if (previewWindow) {
+      previewWindow.close();
+    }
+
+    const link = window.document.createElement("a");
+    link.href = objectUrl;
+    link.download = document.file_name || `documento.${extension}`;
+    link.style.display = "none";
+
+    window.document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
+
+  } catch (error) {
+    if (previewWindow && !previewWindow.closed) {
+      previewWindow.close();
+    }
+
+    throw error;
+  }
 }
 
-export async function openDocument(path) {
-  const { data, error } = await supabase.storage
-    .from(BUCKET)
-    .createSignedUrl(path, 300);
+/* =================================
+   EXCLUIR DOCUMENTO
+================================= */
 
-  if (error) throw error;
+export async function deleteDocument(documentOrId) {
+  const id = typeof documentOrId === "string"
+    ? documentOrId
+    : documentOrId?.id || documentOrId?.storage_path;
 
-  window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-}
+  if (!id) {
+    throw new Error("Documento não identificado para exclusão.");
+  }
 
-export async function deleteDocument(document) {
-  const { error: storageError } = await supabase.storage
-    .from(BUCKET)
-    .remove([document.storage_path]);
+  const database = await openDatabase();
 
-  if (storageError) throw storageError;
+  return new Promise((resolve, reject) => {
+    const transaction = database.transaction(STORE_NAME, "readwrite");
+    const store = transaction.objectStore(STORE_NAME);
 
-  const { error } = await supabase
-    .from("studio_documents")
-    .delete()
-    .eq("id", document.id);
+    store.delete(id);
 
-  if (error) throw error;
+    transaction.oncomplete = () => {
+      database.close();
+      resolve(true);
+    };
+
+    transaction.onerror = () => {
+      database.close();
+      reject(new Error("Não foi possível excluir o documento."));
+    };
+
+    transaction.onabort = () => {
+      database.close();
+      reject(new Error("A exclusão do documento foi cancelada."));
+    };
+  });
 }

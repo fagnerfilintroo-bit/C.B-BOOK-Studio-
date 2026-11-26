@@ -1101,3 +1101,304 @@ function renderWorkspaceFiles(project, content) {
     </section>
   `;
 }
+
+/* =========================================================
+   FORMULÁRIOS DO WORKSPACE
+========================================================= */
+
+function handleTaskCreate(event) {
+  event.preventDefault();
+
+  const project = currentProject();
+  const title = $("taskTitle")?.value.trim();
+
+  if (!project || !title) return;
+
+  project.tasks.push({
+    id: uid(),
+    title,
+    due: $("taskDue")?.value || "",
+    priority: $("taskPriority")?.value || "Normal",
+    done: false,
+    created_at: new Date().toISOString()
+  });
+
+  recordHistory(project, "Tarefa adicionada", title);
+  renderAll();
+  renderWorkspace();
+  showToast("Tarefa adicionada.");
+}
+
+function handleNoteCreate(event) {
+  event.preventDefault();
+
+  const project = currentProject();
+  const title = $("noteTitle")?.value.trim();
+  const content = $("noteContent")?.value.trim();
+
+  if (!project || !title || !content) return;
+
+  project.notes.unshift({
+    id: uid(),
+    title,
+    content,
+    date: new Date().toISOString()
+  });
+
+  recordHistory(project, "Anotação criada", title);
+  renderAll();
+  renderWorkspace();
+  showToast("Anotação salva.");
+}
+
+function handleEventCreate(event) {
+  event.preventDefault();
+
+  const project = currentProject();
+  const title = $("eventTitle")?.value.trim();
+  const date = $("eventDate")?.value;
+
+  if (!project || !title || !date) return;
+
+  project.events.push({
+    id: uid(),
+    title,
+    date,
+    description: $("eventDescription")?.value.trim() || ""
+  });
+
+  recordHistory(project, "Compromisso adicionado", `${title} — ${formatDate(date)}`);
+  renderAll();
+  renderWorkspace();
+  showToast("Compromisso adicionado.");
+}
+
+function handleStageCreate(event) {
+  event.preventDefault();
+
+  const project = currentProject();
+  const title = $("stageTitle")?.value.trim();
+
+  if (!project || !title) return;
+
+  project.stages.push({
+    id: uid(),
+    title,
+    done: false
+  });
+
+  recordHistory(project, "Etapa adicionada", title);
+  renderAll();
+  renderWorkspace();
+  showToast("Etapa adicionada.");
+}
+
+function handleProjectEdit(event) {
+  event.preventDefault();
+
+  const project = currentProject();
+  if (!project) return;
+
+  project.name = $("editProjectName")?.value.trim() || project.name;
+  project.type = $("editProjectType")?.value.trim() || project.type;
+  project.status = $("editProjectStatus")?.value || project.status;
+  project.color = $("editProjectColor")?.value || project.color;
+  project.goal = $("editProjectGoal")?.value.trim() || "";
+  project.next_action = $("editProjectNext")?.value.trim() || "";
+  project.focus = $("editProjectFocus")?.value.trim() || "";
+
+  recordHistory(project, "Informações atualizadas", "Dados gerais do projeto foram modificados.");
+
+  renderAll();
+  renderWorkspace();
+  showToast("Projeto atualizado.");
+}
+
+/* =========================================================
+   AÇÕES DO WORKSPACE
+========================================================= */
+
+function handleAction(action, id, element) {
+  if (action === "open-project") {
+    openWorkspace(id);
+    return;
+  }
+
+  const project = currentProject();
+
+  if (action === "open-doc") {
+    const doc = documents.find((item) => String(item.id) === String(id));
+    if (doc) openDocument(doc);
+    return;
+  }
+
+  if (action === "delete-doc") {
+    const doc = documents.find((item) => String(item.id) === String(id));
+    if (doc) removeDocument(doc);
+    return;
+  }
+
+  if (!project) return;
+
+  if (action === "toggle-task") {
+    const task = project.tasks.find((item) => item.id === id);
+    if (!task) return;
+
+    task.done = element.checked;
+    recordHistory(project, task.done ? "Tarefa concluída" : "Tarefa reaberta", task.title);
+    renderAll();
+    renderWorkspace();
+  }
+
+  if (action === "toggle-stage") {
+    const stage = project.stages.find((item) => item.id === id);
+    if (!stage) return;
+
+    stage.done = element.checked;
+    recordHistory(project, stage.done ? "Etapa concluída" : "Etapa reaberta", stage.title);
+    renderAll();
+    renderWorkspace();
+  }
+
+  if (action === "delete-task") {
+    const task = project.tasks.find((item) => item.id === id);
+
+    if (!task || !confirm(`Excluir a tarefa "${task.title}"?`)) return;
+
+    project.tasks = project.tasks.filter((item) => item.id !== id);
+    recordHistory(project, "Tarefa excluída", task.title);
+    renderAll();
+    renderWorkspace();
+  }
+
+  if (action === "delete-note") {
+    const note = project.notes.find((item) => item.id === id);
+
+    if (!note || !confirm(`Excluir a anotação "${note.title}"?`)) return;
+
+    project.notes = project.notes.filter((item) => item.id !== id);
+    recordHistory(project, "Anotação excluída", note.title);
+    renderAll();
+    renderWorkspace();
+  }
+
+  if (action === "delete-event") {
+    const item = project.events.find((event) => event.id === id);
+
+    if (!item || !confirm(`Excluir o compromisso "${item.title}"?`)) return;
+
+    project.events = project.events.filter((event) => event.id !== id);
+    recordHistory(project, "Compromisso excluído", item.title);
+    renderAll();
+    renderWorkspace();
+  }
+
+  if (action === "delete-stage") {
+    const stage = project.stages.find((item) => item.id === id);
+
+    if (!stage || !confirm(`Excluir a etapa "${stage.title}"?`)) return;
+
+    project.stages = project.stages.filter((item) => item.id !== id);
+    recordHistory(project, "Etapa excluída", stage.title);
+    renderAll();
+    renderWorkspace();
+  }
+}
+
+/* =========================================================
+   DOCUMENTOS
+========================================================= */
+
+function documentName(doc) {
+  return doc.original_name ||
+    doc.file_name ||
+    doc.name ||
+    doc.filename ||
+    "Documento";
+}
+
+function renderDocumentItems(items) {
+  if (!items.length) {
+    return `<p class="empty-state">Nenhum documento adicionado.</p>`;
+  }
+
+  return items.map((doc) => `
+    <div class="document-item">
+      <div class="document-icon">▤</div>
+
+      <div class="document-info">
+        <strong>${escapeHTML(documentName(doc))}</strong>
+        <small>
+          ${escapeHTML(doc.category || "Geral")} ·
+          ${formatBytes(doc.size)} ·
+          ${formatDate(doc.created_at)}
+        </small>
+      </div>
+
+      <div class="document-actions">
+        <button class="btn outline small" data-action="open-doc" data-id="${escapeHTML(doc.id)}">
+          Abrir
+        </button>
+
+        <button class="icon-button" data-action="delete-doc" data-id="${escapeHTML(doc.id)}" title="Excluir documento">
+          ×
+        </button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function renderDocuments() {
+  const list = $("documentList");
+  if (!list) return;
+
+  const selectedProject = $("filterProject")?.value || "all";
+
+  const filtered = selectedProject === "all"
+    ? documents
+    : documents.filter((doc) => doc.project_id === selectedProject);
+
+  list.innerHTML = renderDocumentItems(filtered);
+  renderStats();
+}
+
+function renderProjectSelectors() {
+  ["uploadProject", "filterProject"].forEach((id) => {
+    const select = $(id);
+    if (!select) return;
+
+    const previous = select.value;
+    const isFilter = id === "filterProject";
+
+    select.innerHTML = isFilter
+      ? `<option value="all">Todos os projetos</option>`
+      : `<option value="">Selecionar projeto</option>`;
+
+    state.projects.forEach((project) => {
+      select.insertAdjacentHTML(
+        "beforeend",
+        `<option value="${escapeHTML(project.id)}">${escapeHTML(project.name)}</option>`
+      );
+    });
+
+    if ([...select.options].some((option) => option.value === previous)) {
+      select.value = previous;
+    }
+  });
+}
+
+async function refreshDocuments() {
+  try {
+    const result = await listDocuments();
+    documents = Array.isArray(result) ? result : [];
+  } catch (error) {
+    console.error("Erro ao carregar documentos:", error);
+    documents = [];
+  }
+
+  renderDocuments();
+
+  if ($("workspaceSection")?.classList.contains("active")) {
+    renderWorkspace();
+  }
+}

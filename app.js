@@ -10,6 +10,10 @@ import {
 
 const $ = id => document.getElementById(id);
 
+let projects = [];
+let documents = [];
+let currentUser = null;
+
 const initialProjects = [
   {
     id: "descompolitica",
@@ -80,31 +84,82 @@ const initialProjects = [
   }
 ];
 
-let projects = [];
-let documents = [];
-
 function message(id, text, error = false) {
   const el = $(id);
   if (!el) return;
+
   el.textContent = text;
   el.style.color = error ? "#C44D5A" : "#168A65";
 }
 
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[c]);
+}
+
+function showAuthPanel(panel) {
+  $("loginPanel").hidden = panel !== "login";
+  $("signupPanel").hidden = panel !== "signup";
+  message("loginMessage", "");
+  message("signupMessage", "");
+}
+
+function showApp(session) {
+  const loggedIn = Boolean(session);
+
+  $("loginView").hidden = loggedIn;
+  $("appView").hidden = !loggedIn;
+
+  if (!loggedIn) {
+    $("userDisplayName").textContent = "";
+  }
+}
+
+async function loadUserProfile() {
+  if (!currentUser) return;
+
+  let name = currentUser.user_metadata?.display_name || "";
+
+  const { data, error } = await supabase
+    .from("studio_profiles")
+    .select("display_name")
+    .eq("id", currentUser.id)
+    .maybeSingle();
+
+  if (!error && data?.display_name) {
+    name = data.display_name;
+  }
+
+  $("userDisplayName").textContent = name || currentUser.email || "Usuário";
+}
+
+/*
+  Cada conta recebe projetos próprios.
+  Se o usuário já tiver projetos, nenhum projeto será recriado.
+  Os IDs novos são exclusivos para cada usuário.
+*/
 async function seedProjects() {
-  const { data: auth } = await supabase.auth.getUser();
-  const user = auth.user;
+  if (!currentUser) throw new Error("Usuário não autenticado.");
 
   const { data, error } = await supabase
     .from("studio_projects")
     .select("id")
+    .eq("user_id", currentUser.id)
     .limit(1);
 
   if (error) throw error;
-  if (data.length) return;
 
-  const rows = initialProjects.map(p => ({
-    user_id: user.id,
-    ...p
+  if (data && data.length > 0) return;
+
+  const rows = initialProjects.map(project => ({
+    ...project,
+    id: `${currentUser.id}-${project.id}`,
+    user_id: currentUser.id
   }));
 
   const { error: insertError } = await supabase
@@ -118,81 +173,94 @@ async function loadProjects() {
   const { data, error } = await supabase
     .from("studio_projects")
     .select("*")
-    .order("created_at");
+    .order("created_at", { ascending: true });
 
   if (error) throw error;
 
   projects = data || [];
-  render();
+  renderProjects();
 }
 
-function renderCard(p) {
-  const stages = p.stages || [];
-  const done = stages.filter(s => s[1]).length;
+function renderCard(project) {
+  const stages = Array.isArray(project.stages) ? project.stages : [];
+  const done = stages.filter(stage => stage[1]).length;
+
   const percent = stages.length
     ? Math.round(done / stages.length * 100)
     : 0;
+
+  const id = escapeHTML(project.id);
 
   return `
     <article class="project">
       <div class="project-top">
         <div>
-          <h3>${escapeHTML(p.name)}</h3>
-          <small>${escapeHTML(p.type)}</small>
+          <h3>${escapeHTML(project.name)}</h3>
+          <small>${escapeHTML(project.type)}</small>
         </div>
-        <span class="tag">${escapeHTML(p.status)}</span>
+        <span class="tag">${escapeHTML(project.status)}</span>
       </div>
 
-      <p>${escapeHTML(p.goal)}</p>
+      <p>${escapeHTML(project.goal)}</p>
+
       <div class="progress">
         <span style="width:${percent}%"></span>
       </div>
+
       <div class="meta">
         <span>${done}/${stages.length} etapas</span>
         <b>${percent}%</b>
       </div>
 
-      <p><b>Próxima ação:</b><br>
-      ${escapeHTML(p.next_action)}</p>
+      <p>
+        <b>Próxima ação:</b><br>
+        ${escapeHTML(project.next_action)}
+      </p>
 
-      <button class="btn outline" data-edit="${p.id}">
+      <p><small>${escapeHTML(project.focus)}</small></p>
+
+      <button type="button" class="btn outline" data-edit="${id}">
         Gerenciar projeto
       </button>
 
-      <div class="detail" id="detail-${p.id}">
-        <label>Situação</label>
-        <select id="status-${p.id}">
+      <div class="detail" id="detail-${id}">
+        <label for="status-${id}">Situação</label>
+        <select id="status-${id}">
           ${[
             "Planejamento",
             "Em desenvolvimento",
             "Em recuperação",
             "Em pausa",
             "Concluído"
-          ].map(v => `
-            <option ${p.status === v ? "selected" : ""}>
-              ${v}
+          ].map(status => `
+            <option value="${escapeHTML(status)}"
+              ${project.status === status ? "selected" : ""}>
+              ${escapeHTML(status)}
             </option>
           `).join("")}
         </select>
 
-        <label>Objetivo</label>
-        <textarea id="goal-${p.id}">${escapeHTML(p.goal)}</textarea>
+        <label for="goal-${id}">Objetivo</label>
+        <textarea id="goal-${id}">${escapeHTML(project.goal)}</textarea>
 
-        <label>Próxima ação</label>
-        <textarea id="next-${p.id}">${escapeHTML(p.next_action)}</textarea>
+        <label for="next-${id}">Próxima ação</label>
+        <textarea id="next-${id}">${escapeHTML(project.next_action)}</textarea>
 
         <label>Etapas</label>
-        ${stages.map((s,i) => `
+
+        ${stages.map((stage, index) => `
           <label class="stage">
-            <input type="checkbox"
-              data-stage="${p.id}"
-              data-index="${i}"
-              ${s[1] ? "checked" : ""}>
-            ${escapeHTML(s[0])}
+            <input
+              type="checkbox"
+              data-stage="${id}"
+              data-index="${index}"
+              ${stage[1] ? "checked" : ""}
+            >
+            ${escapeHTML(stage[0])}
           </label>
         `).join("")}
 
-        <button class="btn yellow" data-save="${p.id}">
+        <button type="button" class="btn yellow" data-save="${id}">
           Salvar alterações
         </button>
       </div>
@@ -200,57 +268,57 @@ function renderCard(p) {
   `;
 }
 
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, c => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[c]);
-}
-
-function render() {
+function renderProjects() {
   const totalDone = projects.reduce(
-    (sum,p) => sum + (p.stages || []).filter(s => s[1]).length,
+    (sum, project) =>
+      sum + (project.stages || []).filter(stage => stage[1]).length,
     0
   );
 
-  $("total").textContent = projects.length;
-  $("active").textContent = projects.filter(
-    p => ["Em desenvolvimento","Em recuperação"].includes(p.status)
+  $("projectTotal").textContent = projects.length;
+
+  $("activeTotal").textContent = projects.filter(project =>
+    ["Em desenvolvimento", "Em recuperação"].includes(project.status)
   ).length;
-  $("done").textContent = totalDone;
-  $("docTotal").textContent = documents.length;
+
+  $("doneTotal").textContent = totalDone;
 
   $("overviewGrid").innerHTML = projects.map(renderCard).join("");
   $("projectGrid").innerHTML = projects.map(renderCard).join("");
 
-  const options = projects.map(p =>
-    `<option value="${p.id}">${escapeHTML(p.name)}</option>`
-  ).join("");
+  const options = projects.map(project => `
+    <option value="${escapeHTML(project.id)}">
+      ${escapeHTML(project.name)}
+    </option>
+  `).join("");
 
   $("uploadProject").innerHTML = options;
+
   $("filterProject").innerHTML =
-    `<option value="">Todos os projetos</option>` + options;
+    `<option value="">Todos os projetos</option>${options}`;
 }
 
 async function saveProject(id) {
-  const p = projects.find(x => x.id === id);
-  if (!p) return;
+  const project = projects.find(item => item.id === id);
+  if (!project) return;
 
-  const stages = [...p.stages];
+  const stages = (project.stages || []).map(stage => [...stage]);
 
-  document.querySelectorAll(`[data-stage="${id}"]`)
-    .forEach(el => {
-      stages[Number(el.dataset.index)][1] = el.checked;
-    });
+  document.querySelectorAll("[data-stage]").forEach(input => {
+    if (input.dataset.stage === id) {
+      const index = Number(input.dataset.index);
+      if (stages[index]) {
+        stages[index][1] = input.checked;
+      }
+    }
+  });
 
   const updates = {
     status: $(`status-${id}`).value,
     goal: $(`goal-${id}`).value,
     next_action: $(`next-${id}`).value,
-    stages
+    stages,
+    updated_at: new Date().toISOString()
   };
 
   const { error } = await supabase
@@ -266,21 +334,37 @@ async function saveProject(id) {
 async function loadDocuments() {
   documents = await listDocuments($("filterProject").value);
   renderDocuments();
-  $("docTotal").textContent = documents.length;
 }
 
 function renderDocuments() {
+  $("docTotal").textContent = documents.length;
+
   $("documentList").innerHTML = documents.length
-    ? documents.map(d => `
+    ? documents.map(document => `
       <div class="document-item">
         <div>
-          <strong>${escapeHTML(d.file_name)}</strong>
-          <small>${escapeHTML(d.category)} •
-          ${new Date(d.created_at).toLocaleDateString("pt-BR")}</small>
+          <strong>${escapeHTML(document.file_name)}</strong>
+          <small>
+            ${escapeHTML(document.category)}
+            •
+            ${new Date(document.created_at).toLocaleDateString("pt-BR")}
+          </small>
         </div>
+
         <div>
-          <button class="btn outline" data-open="${d.id}">Abrir</button>
-          <button class="btn outline" data-delete="${d.id}">Excluir</button>
+          <button
+            type="button"
+            class="btn outline"
+            data-open="${escapeHTML(document.id)}">
+            Abrir
+          </button>
+
+          <button
+            type="button"
+            class="btn outline"
+            data-delete="${escapeHTML(document.id)}">
+            Excluir
+          </button>
         </div>
       </div>
     `).join("")
@@ -292,63 +376,187 @@ async function refresh() {
   await loadDocuments();
 }
 
-function showApp(session) {
-  $("loginView").classList.toggle("hidden", !!session);
-  $("appView").classList.toggle("hidden", !session);
-  $("logoutBtn").classList.toggle("hidden", !session);
-}
-
 async function initialize() {
-  const { data } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getSession();
 
-  if (!data.session) {
+  if (error) throw error;
+
+  const session = data.session;
+
+  if (!session) {
+    currentUser = null;
+    projects = [];
+    documents = [];
     showApp(null);
     return;
   }
 
-  showApp(data.session);
+  currentUser = session.user;
+  showApp(session);
 
-  try {
-    await seedProjects();
-    await refresh();
-  } catch (error) {
-    console.error(error);
-    alert("Erro ao carregar os dados: " + error.message);
-  }
+  await loadUserProfile();
+  await seedProjects();
+  await refresh();
 }
 
-$("loginForm").addEventListener("submit", async e => {
-  e.preventDefault();
+/* ALTERNAR ENTRE LOGIN E CADASTRO */
 
-  message("loginMessage", "Entrando...");
+$("showSignupBtn").addEventListener("click", () => {
+  showAuthPanel("signup");
+});
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: $("email").value.trim(),
-    password: $("password").value
-  });
+$("showLoginBtn").addEventListener("click", () => {
+  showAuthPanel("login");
+});
 
-  if (error) {
+/* LOGIN */
+
+$("loginForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const button = $("loginBtn");
+  button.disabled = true;
+  button.textContent = "Entrando...";
+
+  message("loginMessage", "Verificando seus dados...");
+
+  try {
+    const { error } = await supabase.auth.signInWithPassword({
+      email: $("email").value.trim(),
+      password: $("password").value
+    });
+
+    if (error) throw error;
+
+    await initialize();
+  } catch (error) {
     message("loginMessage", error.message, true);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Entrar";
+  }
+});
+
+/* CADASTRO */
+
+$("signupForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  const name = $("signupName").value.trim();
+  const email = $("signupEmail").value.trim();
+  const password = $("signupPassword").value;
+  const confirmation = $("signupPasswordConfirm").value;
+
+  if (password.length < 8) {
+    message("signupMessage", "A senha precisa ter pelo menos 8 caracteres.", true);
     return;
   }
 
-  await initialize();
+  if (password !== confirmation) {
+    message("signupMessage", "As senhas não são iguais.", true);
+    return;
+  }
+
+  const button = $("signupBtn");
+  button.disabled = true;
+  button.textContent = "Criando conta...";
+
+  message("signupMessage", "Criando sua conta...");
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          display_name: name
+        }
+      }
+    });
+
+    if (error) throw error;
+
+    if (data.session) {
+      await initialize();
+      return;
+    }
+
+    message(
+      "signupMessage",
+      "Cadastro realizado! Verifique seu e-mail para confirmar a conta. Depois, faça login."
+    );
+
+    $("signupForm").reset();
+  } catch (error) {
+    message("signupMessage", error.message, true);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Criar minha conta";
+  }
 });
 
+/* RECUPERAÇÃO DE SENHA */
+
+$("forgotPasswordBtn").addEventListener("click", async () => {
+  const email = $("email").value.trim();
+
+  if (!email) {
+    message("loginMessage", "Digite seu e-mail para receber o link de recuperação.", true);
+    $("email").focus();
+    return;
+  }
+
+  message("loginMessage", "Enviando solicitação...");
+
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin
+    });
+
+    if (error) throw error;
+
+    message(
+      "loginMessage",
+      "Se o e-mail estiver cadastrado, você receberá as instruções de recuperação."
+    );
+  } catch (error) {
+    message("loginMessage", error.message, true);
+  }
+});
+
+/* LOGOUT */
+
 $("logoutBtn").addEventListener("click", async () => {
-  await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  currentUser = null;
   projects = [];
   documents = [];
+
+  $("overviewGrid").innerHTML = "";
+  $("projectGrid").innerHTML = "";
+  $("documentList").innerHTML = "";
+
   showApp(null);
+  showAuthPanel("login");
 });
+
+/* ATUALIZAR */
 
 $("refreshBtn").addEventListener("click", async () => {
   try {
     await refresh();
   } catch (error) {
-    alert(error.message);
+    alert("Não foi possível atualizar: " + error.message);
   }
 });
+
+/* FILTRO DE DOCUMENTOS */
 
 $("filterProject").addEventListener("change", async () => {
   try {
@@ -358,37 +566,54 @@ $("filterProject").addEventListener("change", async () => {
   }
 });
 
+/* ENVIO DE DOCUMENTOS */
+
 $("uploadBtn").addEventListener("click", async () => {
   const file = $("fileInput").files[0];
+  const projectId = $("uploadProject").value;
+  const category = $("uploadCategory").value;
 
-  $("uploadBtn").disabled = true;
+  if (!file) {
+    message("uploadMessage", "Selecione um arquivo.", true);
+    return;
+  }
+
+  if (!projectId) {
+    message("uploadMessage", "Selecione um projeto.", true);
+    return;
+  }
+
+  const button = $("uploadBtn");
+  button.disabled = true;
+
   message("uploadMessage", "Enviando arquivo...");
 
   try {
-    await uploadDocument(
-      file,
-      $("uploadProject").value,
-      $("uploadCategory").value
-    );
+    await uploadDocument(file, projectId, category);
 
     $("fileInput").value = "";
+
     message("uploadMessage", "Documento enviado com sucesso!");
+
     await loadDocuments();
   } catch (error) {
     message("uploadMessage", error.message, true);
   } finally {
-    $("uploadBtn").disabled = false;
+    button.disabled = false;
   }
 });
 
-document.addEventListener("click", async e => {
-  const edit = e.target.closest("[data-edit]");
-  const save = e.target.closest("[data-save]");
-  const open = e.target.closest("[data-open]");
-  const remove = e.target.closest("[data-delete]");
+/* AÇÕES DOS PROJETOS E DOCUMENTOS */
+
+document.addEventListener("click", async event => {
+  const edit = event.target.closest("[data-edit]");
+  const save = event.target.closest("[data-save]");
+  const open = event.target.closest("[data-open]");
+  const remove = event.target.closest("[data-delete]");
 
   if (edit) {
-    $(`detail-${edit.dataset.edit}`).classList.toggle("open");
+    const detail = $(`detail-${edit.dataset.edit}`);
+    if (detail) detail.classList.toggle("open");
   }
 
   if (save) {
@@ -396,44 +621,69 @@ document.addEventListener("click", async e => {
       await saveProject(save.dataset.save);
       alert("Projeto atualizado!");
     } catch (error) {
-      alert(error.message);
+      alert("Erro ao salvar projeto: " + error.message);
     }
   }
 
   if (open) {
-    const doc = documents.find(d => d.id === open.dataset.open);
-    if (doc) {
-      try { await openDocument(doc.storage_path); }
-      catch (error) { alert(error.message); }
+    const document = documents.find(
+      item => item.id === open.dataset.open
+    );
+
+    if (document) {
+      try {
+        await openDocument(document.storage_path);
+      } catch (error) {
+        alert("Erro ao abrir documento: " + error.message);
+      }
     }
   }
 
   if (remove) {
-    const doc = documents.find(d => d.id === remove.dataset.delete);
+    const document = documents.find(
+      item => item.id === remove.dataset.delete
+    );
 
-    if (doc && confirm("Deseja excluir este documento?")) {
+    if (document && confirm("Deseja excluir este documento?")) {
       try {
-        await deleteDocument(doc);
+        await deleteDocument(document);
         await loadDocuments();
       } catch (error) {
-        alert(error.message);
+        alert("Erro ao excluir documento: " + error.message);
       }
     }
   }
 });
 
-document.querySelectorAll(".tab").forEach(button => {
-  button.addEventListener("click", () => {
-    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
-    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+/* NAVEGAÇÃO */
 
-    button.classList.add("active");
-    $(button.dataset.tab).classList.add("active");
+document.querySelectorAll("[data-section]").forEach(button => {
+  button.addEventListener("click", () => {
+    const sectionId = button.dataset.section;
+
+    document.querySelectorAll("[data-section]").forEach(item => {
+      item.classList.toggle("active", item === button);
+    });
+
+    document.querySelectorAll(".app-section").forEach(section => {
+      section.hidden = section.id !== sectionId;
+      section.classList.toggle("active", section.id === sectionId);
+    });
   });
 });
 
+/* ESTADO INICIAL */
+
 supabase.auth.onAuthStateChange((event, session) => {
-  if (event === "SIGNED_OUT") showApp(null);
+  if (event === "SIGNED_OUT") {
+    currentUser = null;
+    projects = [];
+    documents = [];
+    showApp(null);
+  }
 });
 
-initialize();
+initialize().catch(error => {
+  console.error("Erro ao iniciar o C.B.Book Studio:", error);
+  alert("Não foi possível carregar o Studio: " + error.message);
+});

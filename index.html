@@ -5,17 +5,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#090d18">
-
   <title>C.B.Book Studio</title>
-
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
 
-  <!-- ÁREA DE AUTENTICAÇÃO -->
+  <!-- AUTENTICAÇÃO -->
   <main id="loginView" class="auth-container">
-
     <section class="auth-card">
 
       <div class="auth-brand">
@@ -26,17 +22,14 @@
 
       <!-- LOGIN -->
       <div id="loginPanel">
-
         <h2>Bem-vindo de volta</h2>
         <p>Acesse sua conta para continuar.</p>
 
         <form id="loginForm">
-
           <label for="email">E-mail</label>
           <input
             type="email"
             id="email"
-            name="email"
             placeholder="seu@email.com"
             autocomplete="email"
             required
@@ -46,16 +39,12 @@
           <input
             type="password"
             id="password"
-            name="password"
             placeholder="Sua senha"
             autocomplete="current-password"
             required
           >
 
-          <button type="submit" id="loginBtn">
-            Entrar
-          </button>
-
+          <button type="submit" id="loginBtn">Entrar</button>
         </form>
 
         <button type="button" id="forgotPasswordBtn" class="text-button">
@@ -66,26 +55,20 @@
 
         <div class="auth-switch">
           Ainda não tem uma conta?
-          <button type="button" id="showSignupBtn">
-            Criar conta
-          </button>
+          <button type="button" id="showSignupBtn">Criar conta</button>
         </div>
-
       </div>
 
       <!-- CADASTRO -->
       <div id="signupPanel" hidden>
-
         <h2>Criar sua conta</h2>
         <p>Comece a organizar seus projetos.</p>
 
         <form id="signupForm">
-
           <label for="signupName">Nome completo</label>
           <input
             type="text"
             id="signupName"
-            name="name"
             placeholder="Seu nome"
             autocomplete="name"
             required
@@ -95,7 +78,6 @@
           <input
             type="email"
             id="signupEmail"
-            name="email"
             placeholder="seu@email.com"
             autocomplete="email"
             required
@@ -105,7 +87,6 @@
           <input
             type="password"
             id="signupPassword"
-            name="password"
             placeholder="Mínimo de 8 caracteres"
             minlength="8"
             autocomplete="new-password"
@@ -116,34 +97,25 @@
           <input
             type="password"
             id="signupPasswordConfirm"
-            name="passwordConfirm"
             placeholder="Digite a senha novamente"
             minlength="8"
             autocomplete="new-password"
             required
           >
 
-          <button type="submit" id="signupBtn">
-            Criar minha conta
-          </button>
-
+          <button type="submit" id="signupBtn">Criar minha conta</button>
         </form>
 
         <p id="signupMessage" class="auth-message" role="status"></p>
 
         <div class="auth-switch">
           Já possui uma conta?
-          <button type="button" id="showLoginBtn">
-            Fazer login
-          </button>
+          <button type="button" id="showLoginBtn">Fazer login</button>
         </div>
-
       </div>
 
     </section>
-
   </main>
-
 
   <!-- APLICAÇÃO -->
   <div id="appView" hidden>
@@ -156,71 +128,63 @@
 
       <div class="user-area">
         <span id="userDisplayName"></span>
-        <button type="button" id="logoutBtn">
-          Sair
-        </button>
+        <button type="button" id="logoutBtn">Sair</button>
       </div>
     </header>
-
 
     <main class="app-container">
 
       <!-- NAVEGAÇÃO -->
       <nav class="main-nav">
-
-        <button type="button" data-section="overviewSection">
+        <button type="button" class="tab active" data-section="overviewSection">
           Visão geral
         </button>
-
-        <button type="button" data-section="projectsSection">
+        <button type="button" class="tab" data-section="projectsSection">
           Projetos
         </button>
-
-        <button type="button" data-section="documentsSection">
+        <button type="button" class="tab" data-section="documentsSection">
           Documentos
         </button>
-
       </nav>
 
-
       <!-- VISÃO GERAL -->
-      <section id="overviewSection" class="app-section">
-
+      <section id="overviewSection" class="app-section panel active">
         <div class="section-heading">
           <div>
             <h2>Visão geral</h2>
             <p>Seu espaço de organização e desenvolvimento.</p>
           </div>
-
-          <button type="button" id="refreshBtn">
-            Atualizar
-          </button>
+          <button type="button" id="refreshBtn">Atualizar</button>
         </div>
 
         <div class="stats-grid">
-
           <article class="stat-card">
             <span>Projetos</span>
             <strong id="projectTotal">0</strong>
           </article>
 
           <article class="stat-card">
+            <span>Em andamento</span>
+            <strong id="activeTotal">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <span>Etapas concluídas</span>
+            <strong id="doneTotal">0</strong>
+          </article>
+
+          <article class="stat-card">
             <span>Documentos</span>
             <strong id="docTotal">0</strong>
           </article>
-
         </div>
 
         <h3>Seus projetos</h3>
-
         <div id="overviewGrid" class="projects-grid"></div>
-
       </section>
 
-
       <!-- PROJETOS -->
-      <section id="projectsSection" class="app-section" hidden>
-
+      <section id="projectsSection" class="app-section panel" hidden>
         <div class="section-heading">
           <div>
             <h2>Projetos</h2>
@@ -229,90 +193,56 @@
         </div>
 
         <div id="projectGrid" class="projects-grid"></div>
-
       </section>
 
-
       <!-- DOCUMENTOS -->
-      <section id="documentsSection" class="app-section" hidden>
-
+      <section id="documentsSection" class="app-section panel" hidden>
         <div class="section-heading">
           <div>
             <h2>Documentos</h2>
-            <p>Organize os materiais dos seus projetos.</p>
+            <p>Armazene materiais dos seus projetos.</p>
           </div>
         </div>
 
         <div class="document-controls">
-
-          <select id="documentProjectFilter">
+          <label for="filterProject">Filtrar por projeto</label>
+          <select id="filterProject">
             <option value="">Todos os projetos</option>
           </select>
-
-          <button type="button" id="newDocumentBtn">
-            Novo documento
-          </button>
-
         </div>
 
-        <div id="documentsGrid"></div>
+        <div class="document-upload">
+          <h3>Enviar novo arquivo</h3>
 
+          <label for="uploadProject">Projeto</label>
+          <select id="uploadProject" required></select>
+
+          <label for="uploadCategory">Categoria</label>
+          <select id="uploadCategory">
+            <option value="document">Documento</option>
+            <option value="brief">Briefing</option>
+            <option value="reference">Referência</option>
+            <option value="note">Anotação</option>
+          </select>
+
+          <label for="fileInput">Arquivo</label>
+          <input
+            type="file"
+            id="fileInput"
+            accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.webp,.svg"
+          >
+
+          <button type="button" id="uploadBtn">Enviar arquivo</button>
+          <p id="uploadMessage" class="auth-message" role="status"></p>
+        </div>
+
+        <h3>Arquivos armazenados</h3>
+        <div id="documentList"></div>
       </section>
 
     </main>
-
   </div>
 
-
-  <!-- MODAL DE DOCUMENTO -->
-  <div id="documentModal" class="modal" hidden>
-
-    <div class="modal-content">
-
-      <button type="button" id="closeDocumentModal">
-        Fechar
-      </button>
-
-      <h2 id="documentModalTitle">Novo documento</h2>
-
-      <form id="documentForm">
-
-        <input type="hidden" id="documentId">
-
-        <label for="documentTitle">Título</label>
-        <input
-          type="text"
-          id="documentTitle"
-          required
-        >
-
-        <label for="documentType">Tipo</label>
-        <select id="documentType">
-          <option value="document">Documento</option>
-          <option value="brief">Briefing</option>
-          <option value="reference">Referência</option>
-          <option value="note">Anotação</option>
-        </select>
-
-        <label for="documentProject">Projeto</label>
-        <select id="documentProject" required></select>
-
-        <label for="documentDescription">Descrição</label>
-        <textarea id="documentDescription"></textarea>
-
-        <button type="submit">
-          Salvar documento
-        </button>
-
-      </form>
-
-    </div>
-
-  </div>
-
-
-  <!-- SCRIPTS -->
   <script type="module" src="app.js"></script>
-
 </body>
 </html>

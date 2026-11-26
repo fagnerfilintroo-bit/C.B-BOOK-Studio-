@@ -1,11 +1,23 @@
-import { createClient } from
-"https://esm.sh/@supabase/supabase-js@2";
 
-const SUPABASE_URL = "SUA_PROJECT_URL";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SUPABASE_KEY = "SUA_PUBLISHABLE_KEY";
+// Configuração do projeto Supabase
+const SUPABASE_URL = "https://ewaycmegjhxsctdtlqvd.supabase.co";
 
+// Utilize sua chave Publishable do Supabase.
+// Não utilize a chave service_role neste arquivo.
+const SUPABASE_KEY = "COLE_AQUI_SUA_CHAVE_PUBLISHABLE";
+
+// Inicialização da conexão
 export const supabase = createClient(
   SUPABASE_URL,
-  SUPABASE_KEY
+  SUPABASE_KEY,
+  {
+    auth: {
+      autoRefreshToken: true,
+      persistSession: true,
+      detectSessionInUrl: true,
+      storage: window.localStorage
+    }
+  }
 );

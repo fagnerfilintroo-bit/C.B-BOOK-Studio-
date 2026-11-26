@@ -1,14 +1,10 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Configuração do projeto Supabase
 const SUPABASE_URL = "https://ewaycmegjhxsctdtlqvd.supabase.co";
 
-// Utilize sua chave Publishable do Supabase.
-// Não utilize a chave service_role neste arquivo.
-const SUPABASE_KEY = "COLE_AQUI_SUA_CHAVE_PUBLISHABLE";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3YXljbWVnamh4c2N0ZHRscXZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU3MDQ5MjIsImV4cCI6MjExMTI4MDkyMn0.MJm65pNRnDwl6xERWI_nWixzNJdIhL4kTloFkI4P8ww";
 
-// Inicialização da conexão
 export const supabase = createClient(
   SUPABASE_URL,
   SUPABASE_KEY,

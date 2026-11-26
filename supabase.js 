@@ -1,17 +1,9 @@
-
 import { createClient } from
-  "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+"https://esm.sh/@supabase/supabase-js@2";
 
-// SUBSTITUA PELOS DADOS DO SEU PROJETO SUPABASE
-const SUPABASE_URL = "COLE_AQUI_SUA_PROJECT_URL";
-const SUPABASE_KEY = "COLE_AQUI_SUA_PUBLISHABLE_KEY";
+const SUPABASE_URL = "SUA_PROJECT_URL";
 
-if (
-  SUPABASE_URL.includes("COLE_AQUI") ||
-  SUPABASE_KEY.includes("COLE_AQUI")
-) {
-  console.warn("Configure as credenciais do Supabase.");
-}
+const SUPABASE_KEY = "SUA_PUBLISHABLE_KEY";
 
 export const supabase = createClient(
   SUPABASE_URL,

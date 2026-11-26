@@ -4,163 +4,315 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#08152F">
+  <meta name="theme-color" content="#090d18">
+
   <title>C.B.Book Studio</title>
+
   <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <div class="logo">C</div>
-      <div>
-        <h1>C.B.BOOK STUDIO</h1>
-        <small>Ideias que ganham vida.</small>
-      </div>
-    </div>
-    <button id="logoutBtn" class="btn outline hidden">Sair</button>
-  </header>
 
-  <main>
-    <section id="loginView" class="login-box">
-      <div class="login-logo">C.B.</div>
-      <h2>Bem-vindo ao Studio</h2>
-      <p>Entre para gerenciar seu ecossistema criativo.</p>
+  <!-- ÁREA DE AUTENTICAÇÃO -->
+  <main id="loginView" class="auth-container">
 
-      <form id="loginForm">
-        <label>E-mail</label>
-        <input id="email" type="email" required placeholder="seu@email.com">
+    <section class="auth-card">
 
-        <label>Senha</label>
-        <input id="password" type="password" required minlength="6">
-
-        <button class="btn primary full" type="submit">Entrar</button>
-      </form>
-
-      <p id="loginMessage" class="message"></p>
-    </section>
-
-    <section id="appView" class="hidden">
-      <div class="hero">
-        <div>
-          <span class="eyebrow">CENTRAL DE COMANDO</span>
-          <h2>Organize. Acompanhe. Evolua.</h2>
-          <p>Seu ecossistema criativo em um só lugar.</p>
-        </div>
-        <span class="version">VERSÃO 2.0</span>
+      <div class="auth-brand">
+        <div class="auth-logo">C.B</div>
+        <h1>C.B.Book <span>Studio</span></h1>
+        <p>Seu espaço para organizar e desenvolver projetos.</p>
       </div>
 
-      <nav class="tabs">
-        <button class="tab active" data-tab="overview">Visão geral</button>
-        <button class="tab" data-tab="projects">Projetos</button>
-        <button class="tab" data-tab="library">Biblioteca</button>
-      </nav>
+      <!-- LOGIN -->
+      <div id="loginPanel">
 
-      <section id="overview" class="panel active">
-        <div class="section-title">
-          <div>
-            <h3>Visão geral</h3>
-            <p>Resumo do ecossistema.</p>
-          </div>
-          <button id="refreshBtn" class="btn outline">Atualizar</button>
-        </div>
+        <h2>Bem-vindo de volta</h2>
+        <p>Acesse sua conta para continuar.</p>
 
-        <div class="stats">
-          <article class="stat">
-            <small>PROJETOS</small>
-            <strong id="total">0</strong>
-          </article>
-          <article class="stat">
-            <small>EM ANDAMENTO</small>
-            <strong id="active">0</strong>
-          </article>
-          <article class="stat">
-            <small>ETAPAS CONCLUÍDAS</small>
-            <strong id="done">0</strong>
-          </article>
-          <article class="stat">
-            <small>DOCUMENTOS</small>
-            <strong id="docTotal">0</strong>
-          </article>
-        </div>
+        <form id="loginForm">
 
-        <div id="overviewGrid" class="project-grid"></div>
-      </section>
-
-      <section id="projects" class="panel">
-        <div class="section-title">
-          <div>
-            <h3>Meus projetos</h3>
-            <p>Gerencie cada iniciativa separadamente.</p>
-          </div>
-        </div>
-
-        <div id="projectGrid" class="project-grid"></div>
-      </section>
-
-      <section id="library" class="panel">
-        <div class="section-title">
-          <div>
-            <h3>Biblioteca documental</h3>
-            <p>Arquivos organizados por projeto.</p>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>Adicionar documento</h3>
-
-          <label>Projeto</label>
-          <select id="uploadProject"></select>
-
-          <label>Categoria</label>
-          <select id="uploadCategory">
-            <option value="norteadores">Documentos norteadores</option>
-            <option value="fichas">Fichas do projeto</option>
-            <option value="identidade">Imagens e identidade</option>
-            <option value="producao">Materiais de produção</option>
-            <option value="outros">Outros</option>
-          </select>
-
-          <label>Arquivo</label>
+          <label for="email">E-mail</label>
           <input
-            id="fileInput"
-            type="file"
-            accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp,.svg"
+            type="email"
+            id="email"
+            name="email"
+            placeholder="seu@email.com"
+            autocomplete="email"
+            required
           >
 
-          <button id="uploadBtn" class="btn primary full">
-            Enviar para nuvem
+          <label for="password">Senha</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Sua senha"
+            autocomplete="current-password"
+            required
+          >
+
+          <button type="submit" id="loginBtn">
+            Entrar
           </button>
 
-          <p id="uploadMessage" class="message"></p>
+        </form>
+
+        <button type="button" id="forgotPasswordBtn" class="text-button">
+          Esqueci minha senha
+        </button>
+
+        <p id="loginMessage" class="auth-message" role="status"></p>
+
+        <div class="auth-switch">
+          Ainda não tem uma conta?
+          <button type="button" id="showSignupBtn">
+            Criar conta
+          </button>
         </div>
 
-        <div class="card">
-          <h3>Arquivos cadastrados</h3>
+      </div>
 
-          <label>Filtrar projeto</label>
-          <select id="filterProject">
+      <!-- CADASTRO -->
+      <div id="signupPanel" hidden>
+
+        <h2>Criar sua conta</h2>
+        <p>Comece a organizar seus projetos.</p>
+
+        <form id="signupForm">
+
+          <label for="signupName">Nome completo</label>
+          <input
+            type="text"
+            id="signupName"
+            name="name"
+            placeholder="Seu nome"
+            autocomplete="name"
+            required
+          >
+
+          <label for="signupEmail">E-mail</label>
+          <input
+            type="email"
+            id="signupEmail"
+            name="email"
+            placeholder="seu@email.com"
+            autocomplete="email"
+            required
+          >
+
+          <label for="signupPassword">Senha</label>
+          <input
+            type="password"
+            id="signupPassword"
+            name="password"
+            placeholder="Mínimo de 8 caracteres"
+            minlength="8"
+            autocomplete="new-password"
+            required
+          >
+
+          <label for="signupPasswordConfirm">Confirmar senha</label>
+          <input
+            type="password"
+            id="signupPasswordConfirm"
+            name="passwordConfirm"
+            placeholder="Digite a senha novamente"
+            minlength="8"
+            autocomplete="new-password"
+            required
+          >
+
+          <button type="submit" id="signupBtn">
+            Criar minha conta
+          </button>
+
+        </form>
+
+        <p id="signupMessage" class="auth-message" role="status"></p>
+
+        <div class="auth-switch">
+          Já possui uma conta?
+          <button type="button" id="showLoginBtn">
+            Fazer login
+          </button>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+
+  <!-- APLICAÇÃO -->
+  <div id="appView" hidden>
+
+    <header class="topbar">
+      <div class="brand">
+        <h1>C.B.Book <span>Studio</span></h1>
+        <p>Central de projetos criativos</p>
+      </div>
+
+      <div class="user-area">
+        <span id="userDisplayName"></span>
+        <button type="button" id="logoutBtn">
+          Sair
+        </button>
+      </div>
+    </header>
+
+
+    <main class="app-container">
+
+      <!-- NAVEGAÇÃO -->
+      <nav class="main-nav">
+
+        <button type="button" data-section="overviewSection">
+          Visão geral
+        </button>
+
+        <button type="button" data-section="projectsSection">
+          Projetos
+        </button>
+
+        <button type="button" data-section="documentsSection">
+          Documentos
+        </button>
+
+      </nav>
+
+
+      <!-- VISÃO GERAL -->
+      <section id="overviewSection" class="app-section">
+
+        <div class="section-heading">
+          <div>
+            <h2>Visão geral</h2>
+            <p>Seu espaço de organização e desenvolvimento.</p>
+          </div>
+
+          <button type="button" id="refreshBtn">
+            Atualizar
+          </button>
+        </div>
+
+        <div class="stats-grid">
+
+          <article class="stat-card">
+            <span>Projetos</span>
+            <strong id="projectTotal">0</strong>
+          </article>
+
+          <article class="stat-card">
+            <span>Documentos</span>
+            <strong id="docTotal">0</strong>
+          </article>
+
+        </div>
+
+        <h3>Seus projetos</h3>
+
+        <div id="overviewGrid" class="projects-grid"></div>
+
+      </section>
+
+
+      <!-- PROJETOS -->
+      <section id="projectsSection" class="app-section" hidden>
+
+        <div class="section-heading">
+          <div>
+            <h2>Projetos</h2>
+            <p>Gerencie seus espaços de trabalho.</p>
+          </div>
+        </div>
+
+        <div id="projectGrid" class="projects-grid"></div>
+
+      </section>
+
+
+      <!-- DOCUMENTOS -->
+      <section id="documentsSection" class="app-section" hidden>
+
+        <div class="section-heading">
+          <div>
+            <h2>Documentos</h2>
+            <p>Organize os materiais dos seus projetos.</p>
+          </div>
+        </div>
+
+        <div class="document-controls">
+
+          <select id="documentProjectFilter">
             <option value="">Todos os projetos</option>
           </select>
 
-          <div id="documentList" class="document-list"></div>
+          <button type="button" id="newDocumentBtn">
+            Novo documento
+          </button>
+
         </div>
+
+        <div id="documentsGrid"></div>
+
       </section>
 
-      <section class="cloud-info">
-        <span>☁</span>
-        <div>
-          <strong>C.B.Book Cloud</strong>
-          <p>Arquivos armazenados em ambiente privado.</p>
-        </div>
-      </section>
-    </section>
-  </main>
+    </main>
 
-  <footer>
-    C.B.Book Studio • Gestão do ecossistema criativo
-  </footer>
+  </div>
 
-  <!-- Caminho corrigido: app.js está na raiz do repositório -->
+
+  <!-- MODAL DE DOCUMENTO -->
+  <div id="documentModal" class="modal" hidden>
+
+    <div class="modal-content">
+
+      <button type="button" id="closeDocumentModal">
+        Fechar
+      </button>
+
+      <h2 id="documentModalTitle">Novo documento</h2>
+
+      <form id="documentForm">
+
+        <input type="hidden" id="documentId">
+
+        <label for="documentTitle">Título</label>
+        <input
+          type="text"
+          id="documentTitle"
+          required
+        >
+
+        <label for="documentType">Tipo</label>
+        <select id="documentType">
+          <option value="document">Documento</option>
+          <option value="brief">Briefing</option>
+          <option value="reference">Referência</option>
+          <option value="note">Anotação</option>
+        </select>
+
+        <label for="documentProject">Projeto</label>
+        <select id="documentProject" required></select>
+
+        <label for="documentDescription">Descrição</label>
+        <textarea id="documentDescription"></textarea>
+
+        <button type="submit">
+          Salvar documento
+        </button>
+
+      </form>
+
+    </div>
+
+  </div>
+
+
+  <!-- SCRIPTS -->
   <script type="module" src="app.js"></script>
+
 </body>
 </html>

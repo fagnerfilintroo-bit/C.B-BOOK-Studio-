@@ -7,8 +7,7 @@ import {
 } from "./documents.js";
 
 /* =========================================================
-   C.B.BOOK STUDIO — MODO LOCAL DE TESTES
-   Os dados ficam no navegador. Nenhuma senha é armazenada.
+   C.B.BOOK STUDIO — VERSÃO LOCAL
 ========================================================= */
 
 const STORAGE_KEY = "cbbook_studio_local_v2";
@@ -238,13 +237,6 @@ function loadState() {
     }];
     saveState();
   }
-
-  try {
-    const session = localStorage.getItem(SESSION_KEY);
-    if (session) currentUser = JSON.parse(session);
-  } catch {
-    currentUser = null;
-  }
 }
 
 function saveState() {
@@ -258,6 +250,7 @@ function saveState() {
 
 function saveSession(user) {
   currentUser = user;
+
   if (user) {
     localStorage.setItem(SESSION_KEY, JSON.stringify(user));
   } else {
@@ -266,7 +259,7 @@ function saveSession(user) {
 }
 
 /* =========================================================
-   MENSAGENS E INTERFACE
+   MENSAGENS
 ========================================================= */
 
 function showToast(message, type = "success") {
@@ -282,6 +275,7 @@ function showToast(message, type = "success") {
   container.innerHTML = `<div class="toast ${type}">${escapeHTML(message)}</div>`;
 
   clearTimeout(toastTimer);
+
   toastTimer = setTimeout(() => {
     container.innerHTML = "";
   }, 3500);
@@ -290,6 +284,7 @@ function showToast(message, type = "success") {
 function setMessage(id, message, type = "error") {
   const element = $(id);
   if (!element) return;
+
   element.textContent = message;
   element.className = `message ${type}`;
 }
@@ -297,25 +292,54 @@ function setMessage(id, message, type = "error") {
 function clearMessage(id) {
   const element = $(id);
   if (!element) return;
+
   element.textContent = "";
   element.className = "message";
 }
+
+/* =========================================================
+   CORREÇÃO DA EXIBIÇÃO DO LOGIN E CADASTRO
+========================================================= */
 
 function showAuthPanel(panel) {
   const login = $("loginPanel");
   const signup = $("signupPanel");
 
-  if (login) login.hidden = panel !== "login";
-  if (signup) signup.hidden = panel !== "signup";
+  if (login) {
+    login.hidden = panel !== "login";
+    login.classList.toggle("hidden", panel !== "login");
+  }
+
+  if (signup) {
+    signup.hidden = panel !== "signup";
+    signup.classList.toggle("hidden", panel !== "signup");
+  }
 }
 
 function showApp() {
-  if ($("loginView")) $("loginView").hidden = true;
-  if ($("appView")) $("appView").hidden = false;
+  const loginView = $("loginView");
+  const appView = $("appView");
+
+  if (loginView) {
+    loginView.hidden = true;
+    loginView.classList.add("hidden");
+  }
+
+  if (appView) {
+    appView.hidden = false;
+    appView.classList.remove("hidden");
+  }
 
   const name = currentUser?.name || "Leitor";
-  if ($("sidebarUserName")) $("sidebarUserName").textContent = name;
-  if ($("userDisplayName")) $("userDisplayName").textContent = name;
+
+  if ($("sidebarUserName")) {
+    $("sidebarUserName").textContent = name;
+  }
+
+  if ($("userDisplayName")) {
+    $("userDisplayName").textContent = name;
+  }
+
   if ($("userAvatar")) {
     $("userAvatar").textContent = name.trim().charAt(0).toUpperCase() || "C";
   }
@@ -325,8 +349,19 @@ function showApp() {
 }
 
 function showLogin() {
-  if ($("appView")) $("appView").hidden = true;
-  if ($("loginView")) $("loginView").hidden = false;
+  const loginView = $("loginView");
+  const appView = $("appView");
+
+  if (appView) {
+    appView.hidden = true;
+    appView.classList.add("hidden");
+  }
+
+  if (loginView) {
+    loginView.hidden = false;
+    loginView.classList.remove("hidden");
+  }
+
   showAuthPanel("login");
 }
 
@@ -362,6 +397,7 @@ function handleSignup(event) {
 
   // A senha não é armazenada nesta versão local.
   const user = { id: uid(), name, email };
+
   state.users.push(user);
   saveState();
   saveSession(user);
@@ -388,7 +424,8 @@ function handleLogin(event) {
     return setMessage("loginMessage", "Acesso não encontrado. Crie um acesso de teste primeiro.");
   }
 
-  // A senha é apenas exigida no formulário. Não existe autenticação real nesta versão.
+  // A senha é apenas exigida no formulário.
+  // Esta versão não oferece autenticação segura.
   saveSession(user);
   showApp();
 }
@@ -420,7 +457,10 @@ function switchSection(sectionId) {
   };
 
   const breadcrumb = $("pageBreadcrumb");
-  if (breadcrumb) breadcrumb.textContent = labels[sectionId] || "C.B.Book Studio";
+
+  if (breadcrumb) {
+    breadcrumb.textContent = labels[sectionId] || "C.B.Book Studio";
+  }
 
   $("sidebar")?.classList.remove("open");
 }
@@ -432,18 +472,6 @@ function openWorkspace(projectId) {
   activeProjectId = projectId;
   activeWorkspaceTab = "summary";
 
-  if ($("workspaceProjectName")) {
-    $("workspaceProjectName").textContent = project.name;
-  }
-
-  if ($("workspaceProjectDescription")) {
-    $("workspaceProjectDescription").textContent = project.goal || project.type;
-  }
-
-  if ($("workspaceProjectStatus")) {
-    $("workspaceProjectStatus").textContent = project.status;
-  }
-
   switchSection("workspaceSection");
   renderWorkspace();
 }
@@ -453,7 +481,7 @@ function currentProject() {
 }
 
 /* =========================================================
-   HISTÓRICO E ATIVIDADE
+   HISTÓRICO
 ========================================================= */
 
 function recordHistory(project, title, description = "") {
@@ -472,7 +500,9 @@ function recordHistory(project, title, description = "") {
   state.activity.unshift({
     id: uid(),
     title,
-    description: project ? `${project.name} — ${description}` : description,
+    description: project
+      ? `${project.name} — ${description}`
+      : description,
     date: entry.date
   });
 
@@ -481,7 +511,7 @@ function recordHistory(project, title, description = "") {
 }
 
 /* =========================================================
-   PROJETOS E PAINEL
+   PROJETOS
 ========================================================= */
 
 function projectProgress(project) {
@@ -523,6 +553,7 @@ function renderProjectCard(project) {
         <span>Progresso</span>
         <strong>${progress}%</strong>
       </div>
+
       <div class="progress">
         <span style="width:${progress}%"></span>
       </div>
@@ -530,7 +561,9 @@ function renderProjectCard(project) {
       <div class="project-focus">${escapeHTML(project.focus)}</div>
 
       <div class="project-actions">
-        <button class="btn primary" data-action="open-project" data-id="${project.id}">Abrir projeto</button>
+        <button class="btn primary" data-action="open-project" data-id="${project.id}">
+          Abrir projeto
+        </button>
       </div>
     </article>
   `;
@@ -562,9 +595,11 @@ function renderSidebarProjects() {
 
 function renderStats() {
   const total = state.projects.length;
+
   const active = state.projects.filter((project) =>
     !["Concluído", "Concluido", "Arquivado"].includes(project.status)
   ).length;
+
   const done = state.projects.filter((project) =>
     ["Concluído", "Concluido"].includes(project.status)
   ).length;
@@ -577,11 +612,13 @@ function renderStats() {
 
 function renderOverview() {
   const grid = $("overviewGrid");
+
   if (grid) {
     grid.innerHTML = state.projects.slice(0, 4).map(renderProjectCard).join("");
   }
 
   const activity = $("recentActivity");
+
   if (activity) {
     if (!state.activity.length) {
       activity.innerHTML = `<p class="empty-state">As atividades recentes aparecerão aqui.</p>`;
@@ -610,7 +647,7 @@ function renderAll() {
 }
 
 /* =========================================================
-   CRIAÇÃO DE PROJETOS
+   CRIAR PROJETO
 ========================================================= */
 
 function handleProjectCreate(event) {
@@ -640,6 +677,7 @@ function handleProjectCreate(event) {
   });
 
   state.projects.unshift(project);
+
   recordHistory(project, "Projeto criado", "Projeto adicionado ao Studio.");
 
   $("projectForm")?.reset();
@@ -656,9 +694,7 @@ function toggleProjectCreate(show) {
 
   panel.classList.toggle("hidden", !show);
 
-  if (show) {
-    $("projectName")?.focus();
-  }
+  if (show) $("projectName")?.focus();
 }
 
 /* =========================================================
@@ -668,6 +704,7 @@ function toggleProjectCreate(show) {
 function renderWorkspace() {
   const project = currentProject();
   const content = $("workspaceContent");
+
   if (!project || !content) return;
 
   document.querySelectorAll(".workspace-tab").forEach((tab) => {
@@ -679,15 +716,19 @@ function renderWorkspace() {
   if ($("workspaceProjectName")) {
     $("workspaceProjectName").textContent = project.name;
   }
+
   if ($("workspaceProjectDescription")) {
     $("workspaceProjectDescription").textContent = project.goal || project.type;
   }
+
   if ($("workspaceProjectStatus")) {
     $("workspaceProjectStatus").textContent = project.status;
   }
+
   if ($("workspaceProgressBar")) {
     $("workspaceProgressBar").style.width = `${progress}%`;
   }
+
   if ($("workspaceProgressText")) {
     $("workspaceProgressText").textContent = `${progress}% concluído`;
   }
@@ -702,25 +743,28 @@ function renderWorkspace() {
 
 function renderWorkspaceSummary(project, content) {
   const doneTasks = project.tasks.filter((task) => task.done).length;
-  const doneStages = project.stages.filter((stage) => stage.done).length;
 
   content.innerHTML = `
     <div class="workspace-grid">
       <section class="content-card workspace-panel">
         <h3>Visão do projeto</h3>
         <p class="muted">${escapeHTML(project.goal || "O objetivo ainda não foi definido.")}</p>
+
         <div class="summary-field">
           <small>Próxima ação</small>
           <strong>${escapeHTML(project.next_action || "Nenhuma ação definida.")}</strong>
         </div>
+
         <div class="summary-field">
           <small>Área de atuação</small>
           <strong>${escapeHTML(project.focus || "Não definida")}</strong>
         </div>
+
         <div class="summary-field">
           <small>Tipo de projeto</small>
           <strong>${escapeHTML(project.type)}</strong>
         </div>
+
         <div class="summary-field">
           <small>Status</small>
           <strong>${escapeHTML(project.status)}</strong>
@@ -750,6 +794,7 @@ function renderWorkspaceSummary(project, content) {
         <label class="stage-item">
           <input type="checkbox" data-action="toggle-stage" data-id="${stage.id}" ${stage.done ? "checked" : ""}>
           <span>${escapeHTML(stage.title)}</span>
+          <button type="button" class="icon-button" data-action="delete-stage" data-id="${stage.id}" title="Excluir etapa">×</button>
         </label>
       `).join("") : `<p class="empty-state">Este projeto ainda não possui etapas.</p>`}
 
@@ -761,13 +806,16 @@ function renderWorkspaceSummary(project, content) {
 
     <section class="content-card workspace-panel">
       <h3>Editar informações</h3>
+
       <form id="projectEditForm" class="form-grid">
         <label>Nome do projeto
           <input id="editProjectName" value="${escapeHTML(project.name)}" required>
         </label>
+
         <label>Tipo
           <input id="editProjectType" value="${escapeHTML(project.type)}">
         </label>
+
         <label>Status
           <select id="editProjectStatus">
             ${["Planejamento", "Desenvolvimento", "Em andamento", "Em recuperação", "Pausado", "Concluído", "Arquivado"].map((status) =>
@@ -775,22 +823,28 @@ function renderWorkspaceSummary(project, content) {
             ).join("")}
           </select>
         </label>
+
         <label>Cor de identificação
           <select id="editProjectColor">
             <option value="blue" ${project.color === "blue" ? "selected" : ""}>Azul</option>
             <option value="green" ${project.color === "green" ? "selected" : ""}>Verde</option>
             <option value="gold" ${project.color === "gold" ? "selected" : ""}>Dourado</option>
+            <option value="purple" ${project.color === "purple" ? "selected" : ""}>Roxo</option>
           </select>
         </label>
+
         <label class="full-field">Objetivo
           <textarea id="editProjectGoal" rows="3">${escapeHTML(project.goal)}</textarea>
         </label>
+
         <label class="full-field">Próxima ação
           <textarea id="editProjectNext" rows="2">${escapeHTML(project.next_action)}</textarea>
         </label>
+
         <label class="full-field">Foco / áreas
           <input id="editProjectFocus" value="${escapeHTML(project.focus)}">
         </label>
+
         <div class="full-field">
           <button class="btn primary" type="submit">Salvar alterações</button>
         </div>
@@ -808,13 +862,16 @@ function renderWorkspaceTasks(project, content) {
   content.innerHTML = `
     <section class="content-card workspace-panel">
       <h3>Adicionar tarefa</h3>
+
       <form id="taskForm" class="form-grid">
         <label class="full-field">O que precisa ser feito?
           <input id="taskTitle" placeholder="Ex.: Preparar primeira publicação" required>
         </label>
+
         <label>Prazo
           <input id="taskDue" type="date">
         </label>
+
         <label>Prioridade
           <select id="taskPriority">
             <option value="Normal">Normal</option>
@@ -822,6 +879,7 @@ function renderWorkspaceTasks(project, content) {
             <option value="Baixa">Baixa</option>
           </select>
         </label>
+
         <div class="full-field">
           <button class="btn primary" type="submit">Adicionar tarefa</button>
         </div>
@@ -830,8 +888,12 @@ function renderWorkspaceTasks(project, content) {
 
     <section class="content-card workspace-panel">
       <div class="section-heading">
-        <div><h3>Lista de tarefas</h3><p>${tasks.filter((task) => task.done).length} de ${tasks.length} concluídas</p></div>
+        <div>
+          <h3>Lista de tarefas</h3>
+          <p>${tasks.filter((task) => task.done).length} de ${tasks.length} concluídas</p>
+        </div>
       </div>
+
       ${tasks.length ? tasks.map((task) => `
         <div class="task-item ${task.done ? "completed" : ""}">
           <input type="checkbox" data-action="toggle-task" data-id="${task.id}" ${task.done ? "checked" : ""}>
@@ -850,19 +912,25 @@ function renderWorkspaceNotes(project, content) {
   content.innerHTML = `
     <section class="content-card workspace-panel">
       <h3>Nova anotação</h3>
+
       <form id="noteForm" class="form-grid">
         <label class="full-field">Título
           <input id="noteTitle" placeholder="Título da anotação" required>
         </label>
+
         <label class="full-field">Conteúdo
           <textarea id="noteContent" rows="5" placeholder="Registre ideias, decisões e informações importantes..." required></textarea>
         </label>
-        <div class="full-field"><button class="btn primary" type="submit">Salvar anotação</button></div>
+
+        <div class="full-field">
+          <button class="btn primary" type="submit">Salvar anotação</button>
+        </div>
       </form>
     </section>
 
     <section class="content-card workspace-panel">
       <h3>Anotações do projeto</h3>
+
       ${project.notes.length ? project.notes.map((note) => `
         <article class="note-item">
           <div class="note-header">
@@ -883,26 +951,42 @@ function renderWorkspaceCalendar(project, content) {
   content.innerHTML = `
     <section class="content-card workspace-panel">
       <h3>Adicionar compromisso</h3>
+
       <form id="eventForm" class="form-grid">
         <label class="full-field">Título
           <input id="eventTitle" placeholder="Ex.: Reunião de planejamento" required>
         </label>
+
         <label>Data
           <input id="eventDate" type="date" required>
         </label>
+
         <label class="full-field">Descrição
           <textarea id="eventDescription" rows="2" placeholder="Detalhes do compromisso (opcional)"></textarea>
         </label>
-        <div class="full-field"><button class="btn primary" type="submit">Adicionar ao calendário</button></div>
+
+        <div class="full-field">
+          <button class="btn primary" type="submit">Adicionar ao calendário</button>
+        </div>
       </form>
     </section>
 
     <section class="content-card workspace-panel">
       <h3>Agenda do projeto</h3>
+
       ${events.length ? events.map((event) => `
         <div class="calendar-item">
-          <div class="calendar-date"><strong>${new Date(event.date + "T12:00:00").getDate()}</strong><small>${new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR", { month: "short" })}</small></div>
-          <div class="calendar-main"><strong>${escapeHTML(event.title)}</strong><p>${escapeHTML(event.description || "")}</p><small>${formatDate(event.date)}</small></div>
+          <div class="calendar-date">
+            <strong>${new Date(event.date + "T12:00:00").getDate()}</strong>
+            <small>${new Date(event.date + "T12:00:00").toLocaleDateString("pt-BR", { month: "short" })}</small>
+          </div>
+
+          <div class="calendar-main">
+            <strong>${escapeHTML(event.title)}</strong>
+            <p>${escapeHTML(event.description || "")}</p>
+            <small>${formatDate(event.date)}</small>
+          </div>
+
           <button class="icon-button" data-action="delete-event" data-id="${event.id}" title="Excluir evento">×</button>
         </div>
       `).join("") : `<p class="empty-state">Nenhum compromisso cadastrado.</p>`}
@@ -914,10 +998,15 @@ function renderWorkspaceHistory(project, content) {
   content.innerHTML = `
     <section class="content-card workspace-panel">
       <h3>Histórico de atividades</h3>
+
       ${project.history.length ? project.history.map((item) => `
         <div class="history-item">
           <div class="activity-marker"></div>
-          <div><strong>${escapeHTML(item.title)}</strong><p>${escapeHTML(item.description || "")}</p><small>${formatDateTime(item.date)}</small></div>
+          <div>
+            <strong>${escapeHTML(item.title)}</strong>
+            <p>${escapeHTML(item.description || "")}</p>
+            <small>${formatDateTime(item.date)}</small>
+          </div>
         </div>
       `).join("") : `<p class="empty-state">As alterações e atividades deste projeto aparecerão aqui.</p>`}
     </section>
@@ -930,10 +1019,12 @@ function renderWorkspaceFiles(project, content) {
   content.innerHTML = `
     <section class="content-card workspace-panel">
       <h3>Adicionar documento</h3>
+
       <form id="workspaceUploadForm" class="form-grid">
         <label class="full-field">Selecionar arquivo
           <input id="workspaceFileInput" type="file" required accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.webp,.svg">
         </label>
+
         <label class="full-field">Categoria
           <select id="workspaceFileCategory">
             <option value="Geral">Geral</option>
@@ -943,7 +1034,10 @@ function renderWorkspaceFiles(project, content) {
             <option value="Final">Final</option>
           </select>
         </label>
-        <div class="full-field"><button class="btn primary" type="submit">Enviar documento</button></div>
+
+        <div class="full-field">
+          <button class="btn primary" type="submit">Enviar documento</button>
+        </div>
       </form>
     </section>
 
@@ -955,13 +1049,15 @@ function renderWorkspaceFiles(project, content) {
 }
 
 /* =========================================================
-   FORMULÁRIOS DA ÁREA DE TRABALHO
+   FORMULÁRIOS DO WORKSPACE
 ========================================================= */
 
 function handleTaskCreate(event) {
   event.preventDefault();
+
   const project = currentProject();
   const title = $("taskTitle")?.value.trim();
+
   if (!project || !title) return;
 
   project.tasks.push({
@@ -981,9 +1077,11 @@ function handleTaskCreate(event) {
 
 function handleNoteCreate(event) {
   event.preventDefault();
+
   const project = currentProject();
   const title = $("noteTitle")?.value.trim();
   const content = $("noteContent")?.value.trim();
+
   if (!project || !title || !content) return;
 
   project.notes.unshift({
@@ -1001,9 +1099,11 @@ function handleNoteCreate(event) {
 
 function handleEventCreate(event) {
   event.preventDefault();
+
   const project = currentProject();
   const title = $("eventTitle")?.value.trim();
   const date = $("eventDate")?.value;
+
   if (!project || !title || !date) return;
 
   project.events.push({
@@ -1021,11 +1121,18 @@ function handleEventCreate(event) {
 
 function handleStageCreate(event) {
   event.preventDefault();
+
   const project = currentProject();
   const title = $("stageTitle")?.value.trim();
+
   if (!project || !title) return;
 
-  project.stages.push({ id: uid(), title, done: false });
+  project.stages.push({
+    id: uid(),
+    title,
+    done: false
+  });
+
   recordHistory(project, "Etapa adicionada", title);
   renderAll();
   renderWorkspace();
@@ -1034,6 +1141,7 @@ function handleStageCreate(event) {
 
 function handleProjectEdit(event) {
   event.preventDefault();
+
   const project = currentProject();
   if (!project) return;
 
@@ -1046,20 +1154,33 @@ function handleProjectEdit(event) {
   project.focus = $("editProjectFocus")?.value.trim() || "";
 
   recordHistory(project, "Informações atualizadas", "Dados gerais do projeto foram modificados.");
+
   renderAll();
   renderWorkspace();
   showToast("Projeto atualizado.");
 }
 
 /* =========================================================
-   AÇÕES DE TAREFAS, ETAPAS, NOTAS E EVENTOS
+   AÇÕES DO WORKSPACE
 ========================================================= */
 
 function handleAction(action, id, element) {
-  const project = currentProject();
-
   if (action === "open-project") {
     openWorkspace(id);
+    return;
+  }
+
+  const project = currentProject();
+
+  if (action === "open-doc") {
+    const doc = documents.find((item) => String(item.id) === String(id));
+    if (doc) openDocument(doc);
+    return;
+  }
+
+  if (action === "delete-doc") {
+    const doc = documents.find((item) => String(item.id) === String(id));
+    if (doc) removeDocument(doc);
     return;
   }
 
@@ -1068,6 +1189,7 @@ function handleAction(action, id, element) {
   if (action === "toggle-task") {
     const task = project.tasks.find((item) => item.id === id);
     if (!task) return;
+
     task.done = element.checked;
     recordHistory(project, task.done ? "Tarefa concluída" : "Tarefa reaberta", task.title);
     renderAll();
@@ -1077,6 +1199,7 @@ function handleAction(action, id, element) {
   if (action === "toggle-stage") {
     const stage = project.stages.find((item) => item.id === id);
     if (!stage) return;
+
     stage.done = element.checked;
     recordHistory(project, stage.done ? "Etapa concluída" : "Etapa reaberta", stage.title);
     renderAll();
@@ -1085,7 +1208,9 @@ function handleAction(action, id, element) {
 
   if (action === "delete-task") {
     const task = project.tasks.find((item) => item.id === id);
+
     if (!task || !confirm(`Excluir a tarefa "${task.title}"?`)) return;
+
     project.tasks = project.tasks.filter((item) => item.id !== id);
     recordHistory(project, "Tarefa excluída", task.title);
     renderAll();
@@ -1094,7 +1219,9 @@ function handleAction(action, id, element) {
 
   if (action === "delete-note") {
     const note = project.notes.find((item) => item.id === id);
+
     if (!note || !confirm(`Excluir a anotação "${note.title}"?`)) return;
+
     project.notes = project.notes.filter((item) => item.id !== id);
     recordHistory(project, "Anotação excluída", note.title);
     renderAll();
@@ -1103,7 +1230,9 @@ function handleAction(action, id, element) {
 
   if (action === "delete-event") {
     const item = project.events.find((event) => event.id === id);
+
     if (!item || !confirm(`Excluir o compromisso "${item.title}"?`)) return;
+
     project.events = project.events.filter((event) => event.id !== id);
     recordHistory(project, "Compromisso excluído", item.title);
     renderAll();
@@ -1112,30 +1241,26 @@ function handleAction(action, id, element) {
 
   if (action === "delete-stage") {
     const stage = project.stages.find((item) => item.id === id);
+
     if (!stage || !confirm(`Excluir a etapa "${stage.title}"?`)) return;
+
     project.stages = project.stages.filter((item) => item.id !== id);
     recordHistory(project, "Etapa excluída", stage.title);
     renderAll();
     renderWorkspace();
   }
-
-  if (action === "open-doc") {
-    const doc = documents.find((item) => String(item.id) === String(id));
-    if (doc) openDocument(doc);
-  }
-
-  if (action === "delete-doc") {
-    const doc = documents.find((item) => String(item.id) === String(id));
-    if (doc) removeDocument(doc);
-  }
 }
 
 /* =========================================================
-   DOCUMENTOS — INDEXEDDB
+   DOCUMENTOS
 ========================================================= */
 
 function documentName(doc) {
-  return doc.original_name || doc.file_name || doc.name || doc.filename || "Documento";
+  return doc.original_name ||
+    doc.file_name ||
+    doc.name ||
+    doc.filename ||
+    "Documento";
 }
 
 function renderDocumentItems(items) {
@@ -1146,13 +1271,24 @@ function renderDocumentItems(items) {
   return items.map((doc) => `
     <div class="document-item">
       <div class="document-icon">▤</div>
+
       <div class="document-info">
         <strong>${escapeHTML(documentName(doc))}</strong>
-        <small>${escapeHTML(doc.category || "Geral")} · ${formatBytes(doc.size)} · ${formatDate(doc.created_at)}</small>
+        <small>
+          ${escapeHTML(doc.category || "Geral")} ·
+          ${formatBytes(doc.size)} ·
+          ${formatDate(doc.created_at)}
+        </small>
       </div>
+
       <div class="document-actions">
-        <button class="btn outline small" data-action="open-doc" data-id="${escapeHTML(doc.id)}">Abrir</button>
-        <button class="icon-button" data-action="delete-doc" data-id="${escapeHTML(doc.id)}" title="Excluir documento">×</button>
+        <button class="btn outline small" data-action="open-doc" data-id="${escapeHTML(doc.id)}">
+          Abrir
+        </button>
+
+        <button class="icon-button" data-action="delete-doc" data-id="${escapeHTML(doc.id)}" title="Excluir documento">
+          ×
+        </button>
       </div>
     </div>
   `).join("");
@@ -1163,6 +1299,7 @@ function renderDocuments() {
   if (!list) return;
 
   const selectedProject = $("filterProject")?.value || "all";
+
   const filtered = selectedProject === "all"
     ? documents
     : documents.filter((doc) => doc.project_id === selectedProject);
@@ -1172,9 +1309,7 @@ function renderDocuments() {
 }
 
 function renderProjectSelectors() {
-  const selectors = ["uploadProject", "filterProject"];
-
-  selectors.forEach((id) => {
+  ["uploadProject", "filterProject"].forEach((id) => {
     const select = $(id);
     if (!select) return;
 
@@ -1229,6 +1364,7 @@ async function handleDocumentUpload(file, projectId, category) {
     await uploadDocument(file, projectId, category || "Geral");
 
     const project = state.projects.find((item) => item.id === projectId);
+
     if (project) {
       recordHistory(project, "Documento adicionado", file.name);
     } else {
@@ -1243,6 +1379,7 @@ async function handleDocumentUpload(file, projectId, category) {
 
     await refreshDocuments();
     renderAll();
+
     showToast("Documento salvo no navegador.");
     return true;
   } catch (error) {
@@ -1254,16 +1391,21 @@ async function handleDocumentUpload(file, projectId, category) {
 
 async function removeDocument(doc) {
   const name = documentName(doc);
+
   if (!confirm(`Excluir "${name}"?`)) return;
 
   try {
     await deleteDocument(doc);
 
     const project = state.projects.find((item) => item.id === doc.project_id);
-    if (project) recordHistory(project, "Documento excluído", name);
+
+    if (project) {
+      recordHistory(project, "Documento excluído", name);
+    }
 
     await refreshDocuments();
     renderAll();
+
     showToast("Documento excluído.");
   } catch (error) {
     console.error("Erro ao excluir documento:", error);
@@ -1278,37 +1420,59 @@ async function removeDocument(doc) {
 function bindEvents() {
   $("loginForm")?.addEventListener("submit", handleLogin);
   $("signupForm")?.addEventListener("submit", handleSignup);
-  $("showSignupBtn")?.addEventListener("click", () => showAuthPanel("signup"));
-  $("showLoginBtn")?.addEventListener("click", () => showAuthPanel("login"));
+
+  $("showSignupBtn")?.addEventListener("click", () => {
+    showAuthPanel("signup");
+    clearMessage("signupMessage");
+  });
+
+  $("showLoginBtn")?.addEventListener("click", () => {
+    showAuthPanel("login");
+    clearMessage("loginMessage");
+  });
 
   $("logoutBtn")?.addEventListener("click", logout);
 
-  $("newProjectBtn")?.addEventListener("click", () => toggleProjectCreate(true));
+  $("newProjectBtn")?.addEventListener("click", () => {
+    toggleProjectCreate(true);
+  });
+
   $("heroNewProjectBtn")?.addEventListener("click", () => {
     switchSection("projectsSection");
     toggleProjectCreate(true);
   });
 
-  $("cancelProjectBtn")?.addEventListener("click", () => toggleProjectCreate(false));
-  $("cancelProjectBtn2")?.addEventListener("click", () => toggleProjectCreate(false));
+  $("cancelProjectBtn")?.addEventListener("click", () => {
+    toggleProjectCreate(false);
+  });
+
+  $("cancelProjectBtn2")?.addEventListener("click", () => {
+    toggleProjectCreate(false);
+  });
+
   $("projectForm")?.addEventListener("submit", handleProjectCreate);
 
-  $("backToProjectsBtn")?.addEventListener("click", () => switchSection("projectsSection"));
+  $("backToProjectsBtn")?.addEventListener("click", () => {
+    switchSection("projectsSection");
+  });
 
   $("workspaceTabs")?.addEventListener("click", (event) => {
     const tab = event.target.closest(".workspace-tab");
     if (!tab) return;
+
     activeWorkspaceTab = tab.dataset.workspace;
     renderWorkspace();
   });
 
   $("uploadForm")?.addEventListener("submit", async (event) => {
     event.preventDefault();
+
     const file = $("fileInput")?.files?.[0];
     const projectId = $("uploadProject")?.value;
     const category = $("uploadCategory")?.value || "Geral";
 
     const success = await handleDocumentUpload(file, projectId, category);
+
     if (success) {
       $("uploadForm")?.reset();
       setMessage("uploadMessage", "Documento salvo com sucesso.", "success");
@@ -1324,22 +1488,21 @@ function bindEvents() {
   });
 
   document.addEventListener("click", (event) => {
-    const nav = event.target.closest(".nav-item");
+    const nav = event.target.closest(".nav-item, [data-section]");
+
     if (nav?.dataset.section) {
       switchSection(nav.dataset.section);
       return;
     }
 
     const actionElement = event.target.closest("[data-action]");
-    if (actionElement) {
-      const action = actionElement.dataset.action;
-      const id = actionElement.dataset.id;
 
-      if (action === "toggle-task" || action === "toggle-stage") {
-        handleAction(action, id, actionElement);
-      } else {
-        handleAction(action, id, actionElement);
-      }
+    if (actionElement) {
+      handleAction(
+        actionElement.dataset.action,
+        actionElement.dataset.id,
+        actionElement
+      );
     }
   });
 
@@ -1348,27 +1511,35 @@ function bindEvents() {
       case "taskForm":
         handleTaskCreate(event);
         break;
+
       case "noteForm":
         handleNoteCreate(event);
         break;
+
       case "eventForm":
         handleEventCreate(event);
         break;
+
       case "stageForm":
         handleStageCreate(event);
         break;
+
       case "projectEditForm":
         handleProjectEdit(event);
         break;
+
       case "workspaceUploadForm": {
         event.preventDefault();
+
         const file = $("workspaceFileInput")?.files?.[0];
         const project = currentProject();
         const category = $("workspaceFileCategory")?.value || "Geral";
+
         if (project) {
           const success = await handleDocumentUpload(file, project.id, category);
           if (success) renderWorkspace();
         }
+
         break;
       }
     }
@@ -1383,14 +1554,25 @@ function init() {
   loadState();
   bindEvents();
 
+  try {
+    const session = localStorage.getItem(SESSION_KEY);
+    if (session) currentUser = JSON.parse(session);
+  } catch {
+    currentUser = null;
+  }
+
   if (currentUser) {
-    const validUser = state.users.find((user) => user.email === currentUser.email);
+    const validUser = state.users.find(
+      (user) => user.email === currentUser.email
+    );
+
     if (validUser) {
       currentUser = validUser;
       saveSession(validUser);
       showApp();
       return;
     }
+
     saveSession(null);
   }
 

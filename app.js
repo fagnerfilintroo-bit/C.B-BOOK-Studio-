@@ -1402,3 +1402,202 @@ async function refreshDocuments() {
     renderWorkspace();
   }
 }
+
+async function handleDocumentUpload(file, projectId, category) {
+  if (!file) {
+    showToast("Selecione um arquivo.", "error");
+    return false;
+  }
+
+  if (!projectId) {
+    showToast("Selecione o projeto ao qual o arquivo pertence.", "error");
+    return false;
+  }
+
+  try {
+    await uploadDocument(file, projectId, category || "Geral");
+
+    const project = state.projects.find((item) => item.id === projectId);
+
+    if (project) {
+      recordHistory(project, "Documento adicionado", file.name);
+    } else {
+      state.activity.unshift({
+        id: uid(),
+        title: "Documento adicionado",
+        description: file.name,
+        date: new Date().toISOString()
+      });
+      saveState();
+    }
+
+    await refreshDocuments();
+    renderAll();
+
+    showToast("Documento salvo no navegador.");
+    return true;
+  } catch (error) {
+    console.error("Erro ao enviar documento:", error);
+    showToast(error.message || "Não foi possível salvar o documento.", "error");
+    return false;
+  }
+}
+
+async function removeDocument(doc) {
+  const name = documentName(doc);
+
+  if (!confirm(`Excluir "${name}"?`)) return;
+
+  try {
+    await deleteDocument(doc);
+
+    const project = state.projects.find((item) => item.id === doc.project_id);
+
+    if (project) {
+      recordHistory(project, "Documento excluído", name);
+    }
+
+    await refreshDocuments();
+    renderAll();
+
+    showToast("Documento excluído.");
+  } catch (error) {
+    console.error("Erro ao excluir documento:", error);
+    showToast(error.message || "Não foi possível excluir o documento.", "error");
+  }
+}
+
+/* =========================================================
+   EVENTOS DA INTERFACE
+========================================================= */
+
+function bindEvents() {
+  $("themeToggle")?.addEventListener("click", toggleTheme);
+
+  $("loginForm")?.addEventListener("submit", handleLogin);
+  $("signupForm")?.addEventListener("submit", handleSignup);
+
+  $("showSignupBtn")?.addEventListener("click", () => {
+    showAuthPanel("signup");
+    clearMessage("signupMessage");
+  });
+
+  $("showLoginBtn")?.addEventListener("click", () => {
+    showAuthPanel("login");
+    clearMessage("loginMessage");
+  });
+
+  $("logoutBtn")?.addEventListener("click", logout);
+
+  $("newProjectBtn")?.addEventListener("click", () => {
+    toggleProjectCreate(true);
+  });
+
+  $("heroNewProjectBtn")?.addEventListener("click", () => {
+    switchSection("projectsSection");
+    toggleProjectCreate(true);
+  });
+
+  $("cancelProjectBtn")?.addEventListener("click", () => {
+    toggleProjectCreate(false);
+  });
+
+  $("cancelProjectBtn2")?.addEventListener("click", () => {
+    toggleProjectCreate(false);
+  });
+
+  $("projectForm")?.addEventListener("submit", handleProjectCreate);
+
+  $("backToProjectsBtn")?.addEventListener("click", () => {
+    switchSection("projectsSection");
+  });
+
+  $("workspaceTabs")?.addEventListener("click", (event) => {
+    const tab = event.target.closest(".workspace-tab");
+    if (!tab) return;
+
+    activeWorkspaceTab = tab.dataset.workspace;
+    renderWorkspace();
+  });
+
+  $("uploadForm")?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    const file = $("fileInput")?.files?.[0];
+    const projectId = $("uploadProject")?.value;
+    const category = $("uploadCategory")?.value || "Geral";
+
+    const success = await handleDocumentUpload(file, projectId, category);
+
+    if (success) {
+      $("uploadForm")?.reset();
+      setMessage("uploadMessage", "Documento salvo com sucesso.", "success");
+    } else {
+      setMessage("uploadMessage", "Não foi possível salvar o documento.");
+    }
+  });
+
+  $("filterProject")?.addEventListener("change", renderDocuments);
+
+  $("menuToggle")?.addEventListener("click", () => {
+    $("sidebar")?.classList.toggle("open");
+  });
+
+  document.addEventListener("click", (event) => {
+    const nav = event.target.closest(".nav-item, [data-section]");
+
+    if (nav?.dataset.section) {
+      switchSection(nav.dataset.section);
+      return;
+    }
+
+    const actionElement = event.target.closest("[data-action]");
+
+    if (actionElement) {
+      handleAction(
+        actionElement.dataset.action,
+        actionElement.dataset.id,
+        actionElement
+      );
+    }
+  });
+
+  document.addEventListener("submit", async (event) => {
+    switch (event.target.id) {
+      case "taskForm":
+        handleTaskCreate(event);
+        break;
+
+      case "noteForm":
+        handleNoteCreate(event);
+        break;
+
+      case "eventForm":
+        handleEventCreate(event);
+        break;
+
+      case "stageForm":
+        handleStageCreate(event);
+        break;
+
+      case "projectEditForm":
+        handleProjectEdit(event);
+        break;
+
+      case "workspaceUploadForm": {
+        event.preventDefault();
+
+        const file = $("workspaceFileInput")?.files?.[0];
+        const project = currentProject();
+        const category = $("workspaceFileCategory")?.value || "Geral";
+
+        if (project) {
+          const success = await handleDocumentUpload(file, project.id, category);
+          if (success) renderWorkspace();
+        }
+
+        break;
+      }
+    }
+  });
+}

@@ -25,13 +25,17 @@
       <div class="login-logo">C.B.</div>
       <h2>Bem-vindo ao Studio</h2>
       <p>Entre para gerenciar seu ecossistema criativo.</p>
+
       <form id="loginForm">
         <label>E-mail</label>
         <input id="email" type="email" required placeholder="seu@email.com">
+
         <label>Senha</label>
         <input id="password" type="password" required minlength="6">
+
         <button class="btn primary full" type="submit">Entrar</button>
       </form>
+
       <p id="loginMessage" class="message"></p>
     </section>
 
@@ -53,32 +57,57 @@
 
       <section id="overview" class="panel active">
         <div class="section-title">
-          <div><h3>Visão geral</h3><p>Resumo do ecossistema.</p></div>
+          <div>
+            <h3>Visão geral</h3>
+            <p>Resumo do ecossistema.</p>
+          </div>
           <button id="refreshBtn" class="btn outline">Atualizar</button>
         </div>
+
         <div class="stats">
-          <article class="stat"><small>PROJETOS</small><strong id="total">0</strong></article>
-          <article class="stat"><small>EM ANDAMENTO</small><strong id="active">0</strong></article>
-          <article class="stat"><small>ETAPAS CONCLUÍDAS</small><strong id="done">0</strong></article>
-          <article class="stat"><small>DOCUMENTOS</small><strong id="docTotal">0</strong></article>
+          <article class="stat">
+            <small>PROJETOS</small>
+            <strong id="total">0</strong>
+          </article>
+          <article class="stat">
+            <small>EM ANDAMENTO</small>
+            <strong id="active">0</strong>
+          </article>
+          <article class="stat">
+            <small>ETAPAS CONCLUÍDAS</small>
+            <strong id="done">0</strong>
+          </article>
+          <article class="stat">
+            <small>DOCUMENTOS</small>
+            <strong id="docTotal">0</strong>
+          </article>
         </div>
+
         <div id="overviewGrid" class="project-grid"></div>
       </section>
 
       <section id="projects" class="panel">
         <div class="section-title">
-          <div><h3>Meus projetos</h3><p>Gerencie cada iniciativa separadamente.</p></div>
+          <div>
+            <h3>Meus projetos</h3>
+            <p>Gerencie cada iniciativa separadamente.</p>
+          </div>
         </div>
+
         <div id="projectGrid" class="project-grid"></div>
       </section>
 
       <section id="library" class="panel">
         <div class="section-title">
-          <div><h3>Biblioteca documental</h3><p>Arquivos organizados por projeto.</p></div>
+          <div>
+            <h3>Biblioteca documental</h3>
+            <p>Arquivos organizados por projeto.</p>
+          </div>
         </div>
 
         <div class="card">
           <h3>Adicionar documento</h3>
+
           <label>Projeto</label>
           <select id="uploadProject"></select>
 
@@ -92,18 +121,27 @@
           </select>
 
           <label>Arquivo</label>
-          <input id="fileInput" type="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp,.svg">
+          <input
+            id="fileInput"
+            type="file"
+            accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp,.svg"
+          >
 
-          <button id="uploadBtn" class="btn primary full">Enviar para nuvem</button>
+          <button id="uploadBtn" class="btn primary full">
+            Enviar para nuvem
+          </button>
+
           <p id="uploadMessage" class="message"></p>
         </div>
 
         <div class="card">
           <h3>Arquivos cadastrados</h3>
+
           <label>Filtrar projeto</label>
           <select id="filterProject">
             <option value="">Todos os projetos</option>
           </select>
+
           <div id="documentList" class="document-list"></div>
         </div>
       </section>
@@ -118,8 +156,11 @@
     </section>
   </main>
 
-  <footer>C.B.Book Studio • Gestão do ecossistema criativo</footer>
+  <footer>
+    C.B.Book Studio • Gestão do ecossistema criativo
+  </footer>
 
-  <script type="module" src="js/app.js"></script>
+  <!-- Caminho corrigido: app.js está na raiz do repositório -->
+  <script type="module" src="app.js"></script>
 </body>
 </html>

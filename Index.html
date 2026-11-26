@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#08152F">
+  <title>C.B.Book Studio</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">C</div>
+      <div>
+        <h1>C.B.BOOK STUDIO</h1>
+        <small>Ideias que ganham vida.</small>
+      </div>
+    </div>
+    <button id="logoutBtn" class="btn outline hidden">Sair</button>
+  </header>
+
+  <main>
+    <section id="loginView" class="login-box">
+      <div class="login-logo">C.B.</div>
+      <h2>Bem-vindo ao Studio</h2>
+      <p>Entre para gerenciar seu ecossistema criativo.</p>
+      <form id="loginForm">
+        <label>E-mail</label>
+        <input id="email" type="email" required placeholder="seu@email.com">
+        <label>Senha</label>
+        <input id="password" type="password" required minlength="6">
+        <button class="btn primary full" type="submit">Entrar</button>
+      </form>
+      <p id="loginMessage" class="message"></p>
+    </section>
+
+    <section id="appView" class="hidden">
+      <div class="hero">
+        <div>
+          <span class="eyebrow">CENTRAL DE COMANDO</span>
+          <h2>Organize. Acompanhe. Evolua.</h2>
+          <p>Seu ecossistema criativo em um só lugar.</p>
+        </div>
+        <span class="version">VERSÃO 2.0</span>
+      </div>
+
+      <nav class="tabs">
+        <button class="tab active" data-tab="overview">Visão geral</button>
+        <button class="tab" data-tab="projects">Projetos</button>
+        <button class="tab" data-tab="library">Biblioteca</button>
+      </nav>
+
+      <section id="overview" class="panel active">
+        <div class="section-title">
+          <div><h3>Visão geral</h3><p>Resumo do ecossistema.</p></div>
+          <button id="refreshBtn" class="btn outline">Atualizar</button>
+        </div>
+        <div class="stats">
+          <article class="stat"><small>PROJETOS</small><strong id="total">0</strong></article>
+          <article class="stat"><small>EM ANDAMENTO</small><strong id="active">0</strong></article>
+          <article class="stat"><small>ETAPAS CONCLUÍDAS</small><strong id="done">0</strong></article>
+          <article class="stat"><small>DOCUMENTOS</small><strong id="docTotal">0</strong></article>
+        </div>
+        <div id="overviewGrid" class="project-grid"></div>
+      </section>
+
+      <section id="projects" class="panel">
+        <div class="section-title">
+          <div><h3>Meus projetos</h3><p>Gerencie cada iniciativa separadamente.</p></div>
+        </div>
+        <div id="projectGrid" class="project-grid"></div>
+      </section>
+
+      <section id="library" class="panel">
+        <div class="section-title">
+          <div><h3>Biblioteca documental</h3><p>Arquivos organizados por projeto.</p></div>
+        </div>
+
+        <div class="card">
+          <h3>Adicionar documento</h3>
+          <label>Projeto</label>
+          <select id="uploadProject"></select>
+
+          <label>Categoria</label>
+          <select id="uploadCategory">
+            <option value="norteadores">Documentos norteadores</option>
+            <option value="fichas">Fichas do projeto</option>
+            <option value="identidade">Imagens e identidade</option>
+            <option value="producao">Materiais de produção</option>
+            <option value="outros">Outros</option>
+          </select>
+
+          <label>Arquivo</label>
+          <input id="fileInput" type="file" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.webp,.svg">
+
+          <button id="uploadBtn" class="btn primary full">Enviar para nuvem</button>
+          <p id="uploadMessage" class="message"></p>
+        </div>
+
+        <div class="card">
+          <h3>Arquivos cadastrados</h3>
+          <label>Filtrar projeto</label>
+          <select id="filterProject">
+            <option value="">Todos os projetos</option>
+          </select>
+          <div id="documentList" class="document-list"></div>
+        </div>
+      </section>
+
+      <section class="cloud-info">
+        <span>☁</span>
+        <div>
+          <strong>C.B.Book Cloud</strong>
+          <p>Arquivos armazenados em ambiente privado.</p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <footer>C.B.Book Studio • Gestão do ecossistema criativo</footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

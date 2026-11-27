@@ -165,93 +165,83 @@
 
         <!-- VISÃO GERAL -->
         <section id="overviewSection" class="app-section active">
+          <div class="eco-page">
 
-          <div class="hero">
-            <div class="hero-content">
-              <span class="eyebrow">CENTRAL DE DESENVOLVIMENTO</span>
-              <h2>Ideias organizadas.<br><span>Projetos em movimento.</span></h2>
-              <p>Um espaço para planejar, construir e acompanhar tudo o que você está desenvolvendo.</p>
-              <button class="btn yellow" id="heroNewProjectBtn" type="button">
-                + Novo projeto
-              </button>
-            </div>
-            <div class="hero-symbol">
-              <div class="hero-orbit orbit-one"></div>
-              <div class="hero-orbit orbit-two"></div>
-              <div class="hero-core">C.B</div>
-            </div>
-            <div class="version">STUDIO · LOCAL EDITION</div>
-          </div>
-
-          <div class="section-heading">
-            <div>
-              <span class="eyebrow">ACOMPANHAMENTO</span>
-              <h2>Visão geral</h2>
-              <p>Resumo do seu ambiente de trabalho.</p>
-            </div>
-          </div>
-
-          <div class="stats-grid">
-            <article class="stat-card">
-              <div class="stat-icon blue">▦</div>
-              <div>
-                <small>Projetos cadastrados</small>
-                <strong id="projectTotal">0</strong>
-              </div>
-            </article>
-
-            <article class="stat-card">
-              <div class="stat-icon gold">◷</div>
-              <div>
-                <small>Em desenvolvimento</small>
-                <strong id="activeTotal">0</strong>
-              </div>
-            </article>
-
-            <article class="stat-card">
-              <div class="stat-icon green">✓</div>
-              <div>
-                <small>Concluídos</small>
-                <strong id="doneTotal">0</strong>
-              </div>
-            </article>
-
-            <article class="stat-card">
-              <div class="stat-icon purple">▤</div>
-              <div>
-                <small>Documentos</small>
-                <strong id="docTotal">0</strong>
-              </div>
-            </article>
-          </div>
-
-          <div class="dashboard-grid">
-            <section class="content-card dashboard-projects">
-              <div class="card-heading">
+            <div class="ecosystem">
+              <header class="eco-head">
                 <div>
-                  <h3>Seus projetos</h3>
-                  <p>Continue de onde você parou.</p>
+                  <h2>C.B.Book Studio</h2>
+                  <span class="eco-kicker">CENTRAL DE GESTÃO</span>
                 </div>
-                <button class="text-button" data-section="projectsSection" type="button">
-                  Ver todos →
-                </button>
-              </div>
-              <div id="overviewGrid" class="project-grid compact-grid"></div>
-            </section>
+                <svg class="eco-ico eco-head-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 3l9 4.5-9 4.5-9-4.5z"/>
+                  <path d="M3 12l9 4.5 9-4.5"/>
+                  <path d="M3 16.5l9 4.5 9-4.5"/>
+                </svg>
+              </header>
 
-            <section class="content-card activity-card">
-              <div class="card-heading">
-                <div>
-                  <h3>Atividades recentes</h3>
-                  <p>Últimas movimentações do Studio.</p>
+              <div class="eco-intro">
+                <svg class="eco-ico" viewBox="0 0 24 24" aria-hidden="true">
+                  <circle cx="12" cy="5" r="2"/>
+                  <circle cx="5" cy="19" r="2"/>
+                  <circle cx="19" cy="19" r="2"/>
+                  <path d="M12 7v5M12 12H5v5M12 12h7v5"/>
+                </svg>
+                <strong>NOSSO ECOSSISTEMA</strong>
+                <p>Uma central. Três grandes frentes.</p>
+              </div>
+
+              <div id="ecoBranches" class="eco-branches"></div>
+
+              <div class="eco-north">
+                <div class="eco-north-title">
+                  <svg class="eco-ico" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M15.5 8.5l-2 5-5 2 2-5z"/>
+                  </svg>
+                  <strong>NOSSO NORTE</strong>
                 </div>
+                <p>Três projetos independentes, uma estrutura de gestão e uma visão compartilhada.</p>
               </div>
-              <div id="recentActivity" class="recent-activity">
-                <div class="empty-state">Suas atividades aparecerão aqui.</div>
-              </div>
-            </section>
+
+              <p class="eco-tagline">Ideias que ganham vida.</p>
+            </div>
+
+            <div class="eco-panels">
+              <section class="content-card">
+                <div class="card-heading">
+                  <div>
+                    <h3>Tarefas pendentes</h3>
+                    <p>O que está em aberto nos seus projetos.</p>
+                  </div>
+                </div>
+                <div id="pendingTasks" class="eco-list"></div>
+              </section>
+
+              <section class="content-card">
+                <div class="card-heading">
+                  <div>
+                    <h3>Próximos compromissos</h3>
+                    <p>Datas marcadas a partir de hoje.</p>
+                  </div>
+                </div>
+                <div id="upcomingEvents" class="eco-list"></div>
+              </section>
+
+              <section class="content-card activity-card">
+                <div class="card-heading">
+                  <div>
+                    <h3>Atividades recentes</h3>
+                    <p>Últimas movimentações do Studio.</p>
+                  </div>
+                </div>
+                <div id="recentActivity" class="recent-activity">
+                  <div class="empty-state">Suas atividades aparecerão aqui.</div>
+                </div>
+              </section>
+            </div>
+
           </div>
-
         </section>
 
 
@@ -410,7 +400,11 @@
               </div>
 
               <label for="fileInput">Arquivo</label>
-              <input id="fileInput" type="file" accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.webp,.svg">
+              <div class="upload-helper">
+                <button type="button" class="btn primary" data-action="pick-file" data-target="fileInput">Escolher arquivo</button>
+                <span class="upload-file-name" data-file-name-for="fileInput">Nenhum arquivo escolhido</span>
+              </div>
+              <input id="fileInput" class="visually-hidden" type="file" accept="image/*,application/pdf,.pdf,.doc,.docx,.txt,.svg">
 
               <button id="uploadBtn" class="btn primary" type="submit">
                 Enviar documento

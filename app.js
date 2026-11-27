@@ -104,7 +104,7 @@ const initialProjects = [
     ]
   },
   {
-    name: "C.B.Book",
+    name: "C.B.Library",
     type: "Editora independente",
     status: "Planejamento",
     goal: "Estruturar uma editora independente e preparar sua primeira publicação.",
@@ -349,6 +349,51 @@ function clearMessage(id) {
 
   element.textContent = "";
   element.className = "message";
+}
+
+/* =========================================================
+   CONFIRMAÇÃO NA PRÓPRIA PÁGINA
+   (substitui o confirm() do navegador, que alguns ambientes bloqueiam)
+========================================================= */
+
+function askConfirm(message, confirmLabel = "Excluir") {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+    overlay.innerHTML = `
+      <div class="confirm-box" role="alertdialog" aria-modal="true" aria-labelledby="confirmText">
+        <p id="confirmText">${escapeHTML(message)}</p>
+        <div class="confirm-actions">
+          <button type="button" class="btn outline" data-confirm="no">Cancelar</button>
+          <button type="button" class="btn danger" data-confirm="yes">${escapeHTML(confirmLabel)}</button>
+        </div>
+      </div>
+    `;
+
+    const onKey = (event) => {
+      if (event.key === "Escape") close(false);
+    };
+
+    function close(result) {
+      overlay.remove();
+      document.removeEventListener("keydown", onKey);
+      resolve(result);
+    }
+
+    overlay.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-confirm]");
+
+      if (button) {
+        close(button.dataset.confirm === "yes");
+      } else if (event.target === overlay) {
+        close(false);
+      }
+    });
+
+    document.addEventListener("keydown", onKey);
+    document.body.appendChild(overlay);
+    overlay.querySelector('[data-confirm="no"]').focus();
+  });
 }
 
 /* =========================================================
@@ -664,12 +709,179 @@ function renderStats() {
   if ($("docTotal")) $("docTotal").textContent = documents.length;
 }
 
-function renderOverview() {
-  const grid = $("overviewGrid");
+/* =========================================================
+   TELA INICIAL — MAPA DO ECOSSISTEMA
+========================================================= */
 
-  if (grid) {
-    grid.innerHTML = state.projects.slice(0, 4).map(renderProjectCard).join("");
+const ECO_ICONS = {
+  book: `<svg class="eco-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 5.5S5 4 8.5 4c1.5 0 2.7.4 3.5 1 .8-.6 2-1 3.5-1C19 4 22 5.5 22 5.5V19s-3-1.2-6.5-1.2c-1.5 0-2.7.4-3.5 1.2-.8-.8-2-1.2-3.5-1.2C5 17.8 2 19 2 19z"/><path d="M12 5v14"/></svg>`,
+  game: `<svg class="eco-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8h12a4 4 0 0 1 3.9 3.1l.9 4A3 3 0 0 1 17.9 18L16 15.8H8L6.1 18A3 3 0 0 1 1.2 15.1l.9-4A4 4 0 0 1 6 8z"/><path d="M7.5 11v4M5.5 13h4"/><circle cx="16" cy="12" r=".7"/><circle cx="18.2" cy="14" r=".7"/></svg>`,
+  clapper: `<svg class="eco-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="11" width="18" height="9" rx="1.5"/><path d="M3 11 2.4 7.6 19.8 4l.8 3.4z"/><path d="M7 10l-.9-3.4M12 8.9l-.9-3.4M17 7.9l-.9-3.4"/></svg>`
+};
+
+const ECO_BRANCHES = [
+  {
+    key: "library",
+    number: "01",
+    title: "C.B.Library",
+    subtitle: "Leitura • Escrita • Editora • Publicação",
+    tagline: "Cultura e literatura",
+    icon: "book",
+    wide: true,
+    names: ["c.b.library", "cb library", "c.b.book", "cb book"]
+  },
+  {
+    key: "mandato",
+    number: "02",
+    title: "Mandato",
+    subtitle: "Jogo • Estratégia • Política",
+    tagline: "",
+    icon: "game",
+    wide: false,
+    names: ["mandato"]
+  },
+  {
+    key: "descompolitica",
+    number: "03",
+    title: "Descompolítica",
+    subtitle: "História • Filosofia • Política • Conhecimento",
+    tagline: "",
+    icon: "clapper",
+    wide: false,
+    names: ["descompolitica"]
   }
+];
+
+function normalizeName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+function findBranchProject(branch) {
+  return state.projects.find((project) =>
+    branch.names.includes(normalizeName(project.name))
+  );
+}
+
+function openBranch(key) {
+  const branch = ECO_BRANCHES.find((item) => item.key === key);
+  if (!branch) return;
+
+  const project = findBranchProject(branch);
+
+  if (project) {
+    openWorkspace(project.id);
+    return;
+  }
+
+  switchSection("projectsSection");
+  toggleProjectCreate(true);
+  showToast(`Crie o projeto "${branch.title}" para abrir este ramo.`, "error");
+}
+
+function renderEcosystem() {
+  const container = $("ecoBranches");
+  if (!container) return;
+
+  container.innerHTML = ECO_BRANCHES.map((branch) => {
+    const project = findBranchProject(branch);
+    const progress = project ? projectProgress(project) : 0;
+    const pending = project ? project.tasks.filter((task) => !task.done).length : 0;
+
+    const footer = project
+      ? `${progress}% concluído · ${pending} ${pending === 1 ? "tarefa pendente" : "tarefas pendentes"}`
+      : "Projeto ainda não criado";
+
+    return `
+      <button type="button" class="eco-card ${branch.wide ? "wide" : ""}" data-action="open-branch" data-id="${branch.key}">
+        <div class="eco-card-top">
+          <span class="eco-icon">${ECO_ICONS[branch.icon]}</span>
+          <span class="eco-badge ${branch.number === "01" ? "first" : ""}">Ramo ${branch.number}</span>
+        </div>
+        <h3>${escapeHTML(branch.title)}</h3>
+        <p class="eco-sub">${escapeHTML(branch.subtitle)}</p>
+        ${branch.tagline ? `<p class="eco-tag">${escapeHTML(branch.tagline)}</p>` : ""}
+        <div class="eco-foot">
+          <div class="eco-bar"><span style="width:${progress}%"></span></div>
+          <small>${footer}</small>
+        </div>
+      </button>
+    `;
+  }).join("");
+}
+
+function renderPendingTasks() {
+  const list = $("pendingTasks");
+  if (!list) return;
+
+  const items = state.projects
+    .flatMap((project) =>
+      project.tasks
+        .filter((task) => !task.done)
+        .map((task) => ({ task, project }))
+    )
+    .sort((a, b) => (a.task.due || "9999").localeCompare(b.task.due || "9999"))
+    .slice(0, 6);
+
+  if (!items.length) {
+    list.innerHTML = `<p class="empty-state">Nenhuma tarefa pendente. Adicione tarefas dentro de cada projeto.</p>`;
+    return;
+  }
+
+  list.innerHTML = items.map(({ task, project }) => `
+    <button type="button" class="eco-row" data-action="open-project" data-id="${escapeHTML(project.id)}">
+      <span class="eco-dot ${escapeHTML(project.color)}"></span>
+      <span class="eco-row-main">
+        <strong>${escapeHTML(task.title)}</strong>
+        <small>${escapeHTML(project.name)} · ${task.due ? `Prazo: ${formatDate(task.due)}` : "Sem prazo"}</small>
+      </span>
+    </button>
+  `).join("");
+}
+
+function renderUpcomingEvents() {
+  const list = $("upcomingEvents");
+  if (!list) return;
+
+  const now = new Date();
+  const today = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0")
+  ].join("-");
+
+  const items = state.projects
+    .flatMap((project) =>
+      project.events
+        .filter((event) => event.date >= today)
+        .map((event) => ({ event, project }))
+    )
+    .sort((a, b) => a.event.date.localeCompare(b.event.date))
+    .slice(0, 5);
+
+  if (!items.length) {
+    list.innerHTML = `<p class="empty-state">Nenhum compromisso marcado. Use o calendário de cada projeto.</p>`;
+    return;
+  }
+
+  list.innerHTML = items.map(({ event, project }) => `
+    <button type="button" class="eco-row" data-action="open-project" data-id="${escapeHTML(project.id)}">
+      <span class="eco-dot ${escapeHTML(project.color)}"></span>
+      <span class="eco-row-main">
+        <strong>${escapeHTML(event.title)}</strong>
+        <small>${escapeHTML(project.name)} · ${formatDate(event.date)}</small>
+      </span>
+    </button>
+  `).join("");
+}
+
+function renderOverview() {
+  renderEcosystem();
+  renderPendingTasks();
+  renderUpcomingEvents();
 
   const activity = $("recentActivity");
 
@@ -904,6 +1116,14 @@ function renderWorkspaceSummary(project, content) {
         </div>
       </form>
     </section>
+
+    <section class="content-card workspace-panel danger-zone">
+      <h3>Excluir projeto</h3>
+      <p class="muted">Remove o projeto com suas etapas, tarefas, anotações, eventos e documentos. Não dá para desfazer.</p>
+      <button type="button" class="btn danger" data-action="delete-project" data-id="${escapeHTML(project.id)}">
+        Excluir projeto
+      </button>
+    </section>
   `;
 }
 
@@ -1075,9 +1295,13 @@ function renderWorkspaceFiles(project, content) {
       <h3>Adicionar documento</h3>
 
       <form id="workspaceUploadForm" class="form-grid">
-        <label class="full-field">Selecionar arquivo
-          <input id="workspaceFileInput" type="file" required accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.webp,.svg">
-        </label>
+        <div class="full-field">
+          <div class="upload-helper">
+            <button type="button" class="btn primary" data-action="pick-file" data-target="workspaceFileInput">Escolher arquivo</button>
+            <span class="upload-file-name" data-file-name-for="workspaceFileInput">Nenhum arquivo escolhido</span>
+          </div>
+          <input id="workspaceFileInput" class="visually-hidden" type="file" accept="image/*,application/pdf,.pdf,.doc,.docx,.txt,.svg">
+        </div>
 
         <label class="full-field">Categoria
           <select id="workspaceFileCategory">
@@ -1218,9 +1442,52 @@ function handleProjectEdit(event) {
    AÇÕES DO WORKSPACE
 ========================================================= */
 
-function handleAction(action, id, element) {
+async function deleteProject(project) {
+  try {
+    const projectDocs = documents.filter((doc) => doc.project_id === project.id);
+
+    for (const doc of projectDocs) {
+      await deleteDocument(doc);
+    }
+
+    state.projects = state.projects.filter((item) => item.id !== project.id);
+
+    state.activity.unshift({
+      id: uid(),
+      title: "Projeto excluído",
+      description: project.name,
+      date: new Date().toISOString()
+    });
+    state.activity = state.activity.slice(0, 40);
+    saveState();
+
+    activeProjectId = null;
+    switchSection("projectsSection");
+
+    await refreshDocuments();
+    renderAll();
+
+    showToast("Projeto excluído.");
+  } catch (error) {
+    console.error("Erro ao excluir projeto:", error);
+    showToast(error.message || "Não foi possível excluir o projeto.", "error");
+  }
+}
+
+async function handleAction(action, id, element) {
   if (action === "open-project") {
     openWorkspace(id);
+    return;
+  }
+
+  if (action === "open-branch") {
+    openBranch(id);
+    return;
+  }
+
+  if (action === "pick-file") {
+    const input = $(element?.dataset?.target);
+    if (input) input.click();
     return;
   }
 
@@ -1239,6 +1506,15 @@ function handleAction(action, id, element) {
   }
 
   if (!project) return;
+
+  if (action === "delete-project") {
+    const message = `Excluir o projeto "${project.name}" com todas as tarefas, anotações, eventos e documentos?`;
+
+    if (!(await askConfirm(message, "Excluir projeto"))) return;
+
+    await deleteProject(project);
+    return;
+  }
 
   if (action === "toggle-task") {
     const task = project.tasks.find((item) => item.id === id);
@@ -1263,7 +1539,7 @@ function handleAction(action, id, element) {
   if (action === "delete-task") {
     const task = project.tasks.find((item) => item.id === id);
 
-    if (!task || !confirm(`Excluir a tarefa "${task.title}"?`)) return;
+    if (!task || !(await askConfirm(`Excluir a tarefa "${task.title}"?`))) return;
 
     project.tasks = project.tasks.filter((item) => item.id !== id);
     recordHistory(project, "Tarefa excluída", task.title);
@@ -1274,7 +1550,7 @@ function handleAction(action, id, element) {
   if (action === "delete-note") {
     const note = project.notes.find((item) => item.id === id);
 
-    if (!note || !confirm(`Excluir a anotação "${note.title}"?`)) return;
+    if (!note || !(await askConfirm(`Excluir a anotação "${note.title}"?`))) return;
 
     project.notes = project.notes.filter((item) => item.id !== id);
     recordHistory(project, "Anotação excluída", note.title);
@@ -1285,7 +1561,7 @@ function handleAction(action, id, element) {
   if (action === "delete-event") {
     const item = project.events.find((event) => event.id === id);
 
-    if (!item || !confirm(`Excluir o compromisso "${item.title}"?`)) return;
+    if (!item || !(await askConfirm(`Excluir o compromisso "${item.title}"?`))) return;
 
     project.events = project.events.filter((event) => event.id !== id);
     recordHistory(project, "Compromisso excluído", item.title);
@@ -1296,7 +1572,7 @@ function handleAction(action, id, element) {
   if (action === "delete-stage") {
     const stage = project.stages.find((item) => item.id === id);
 
-    if (!stage || !confirm(`Excluir a etapa "${stage.title}"?`)) return;
+    if (!stage || !(await askConfirm(`Excluir a etapa "${stage.title}"?`))) return;
 
     project.stages = project.stages.filter((item) => item.id !== id);
     recordHistory(project, "Etapa excluída", stage.title);
@@ -1330,7 +1606,7 @@ function renderDocumentItems(items) {
         <strong>${escapeHTML(documentName(doc))}</strong>
         <small>
           ${escapeHTML(doc.category || "Geral")} ·
-          ${formatBytes(doc.size)} ·
+          ${formatBytes(doc.file_size ?? doc.size)} ·
           ${formatDate(doc.created_at)}
         </small>
       </div>
@@ -1446,7 +1722,7 @@ async function handleDocumentUpload(file, projectId, category) {
 async function removeDocument(doc) {
   const name = documentName(doc);
 
-  if (!confirm(`Excluir "${name}"?`)) return;
+  if (!(await askConfirm(`Excluir "${name}"?`))) return;
 
   try {
     await deleteDocument(doc);
@@ -1562,6 +1838,24 @@ function bindEvents() {
     }
   });
 
+  document.addEventListener("change", (event) => {
+    const input = event.target;
+
+    if (input?.type !== "file") return;
+
+    const file = input.files?.[0];
+    const label = document.querySelector(`[data-file-name-for="${input.id}"]`);
+
+    if (label) label.textContent = file ? file.name : "Nenhum arquivo escolhido";
+    if (file) showToast(`Arquivo selecionado: ${file.name}`);
+  });
+
+  document.addEventListener("reset", () => {
+    document.querySelectorAll("[data-file-name-for]").forEach((label) => {
+      label.textContent = "Nenhum arquivo escolhido";
+    });
+  });
+
   document.addEventListener("submit", async (event) => {
     switch (event.target.id) {
       case "taskForm":
@@ -1618,6 +1912,7 @@ function init() {
   }
 
   applyTheme(savedTheme);
+
   bindEvents();
 
   try {

@@ -114,8 +114,12 @@ export async function uploadDocument(file, projectId, category = "Geral") {
   const extension = getExtension(file.name);
   const mimeType = getMimeType(file);
 
-  if (!allowedTypes[extension] || !mimeType) {
-    throw new Error("Formato de arquivo não permitido.");
+  const allowedByExtension = Boolean(allowedTypes[extension]);
+  const allowedByMime = Object.values(allowedTypes).includes(file.type);
+
+  // Alguns celulares enviam arquivos sem extensão no nome; nesse caso vale o tipo.
+  if ((!allowedByExtension && !allowedByMime) || !mimeType) {
+    throw new Error("Formato de arquivo não permitido. Use PDF, Word, TXT ou imagem.");
   }
 
   const database = await openDatabase();

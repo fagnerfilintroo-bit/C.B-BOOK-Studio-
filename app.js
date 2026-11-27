@@ -3,7 +3,8 @@ import {
   uploadDocument,
   listDocuments,
   openDocument,
-  deleteDocument
+  deleteDocument,
+  getDocumentFile
 } from "./documents.js";
 
 /* =========================================================
@@ -1593,6 +1594,143 @@ function documentName(doc) {
     "Documento";
 }
 
+const thumbnailUrls = new Map();
+const thumbnailPending = new Set();
+
+function isImageDoc(doc) {
+  return String(doc.mime_type || "").startsWith("image/");
+}
+
+function fileKind(doc) {
+  const name = documentName(doc);
+  const extension = name.includes(".") ? name.split(".").pop().toLowerCase() : "";
+  const mime = String(doc.mime_type || "");
+
+  if (mime === "application/pdf" || extension === "pdf") {
+    return { cls: "file-pdf", label: "PDF" };
+  }
+
+  if (extension === "docx" || mime.includes("wordprocessingml")) {
+    return { cls: "file-doc", label: "DOCX" };
+  }
+
+  if (extension === "doc" || mime === "application/msword") {
+    return { cls: "file-doc", label: "DOC" };
+  }
+
+  if (extension === "txt" || mime === "text/plain") {
+    return { cls: "file-txt", label: "TXT" };
+  }
+
+  if (extension === "svg" || mime === "image/svg+xml") {
+    return { cls: "file-svg", label: "SVG" };
+  }
+
+  if (mime.startsWith("image/")) {
+    return { cls: "file-img", label: (extension || "IMG").slice(0, 4).toUpperCase() };
+  }
+
+  return { cls: "file-other", label: (extension || "ARQ").slice(0, 4).toUpperCase() };
+}
+
+function fileBadge(kind) {
+  return `
+    <span class="file-badge ${kind.cls}">
+      <svg viewBox="0 0 24 28" aria-hidden="true">
+        <path d="M5 1h9l6 6v18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2z"/>
+        <path d="M14 1v6h6"/>
+      </svg>
+      <b>${escapeHTML(kind.label)}</b>
+    </span>
+  `;
+}
+
+async function makeThumbnail(blob) {
+  if (blob.type === "image/svg+xml" || !window.createImageBitmap) {
+    return URL.createObjectURL(blob);
+  }
+
+  try {
+    const bitmap = await createImageBitmap(blob, {
+      resizeWidth: 240,
+      resizeQuality: "medium"
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = bitmap.width;
+    canvas.height = bitmap.height;
+    canvas.getContext("2d").drawImage(bitmap, 0, 0);
+
+    if (bitmap.close) bitmap.close();
+
+    const thumb = await new Promise((resolve) => {
+      canvas.toBlob(resolve, "image/webp", 0.8);
+    });
+
+    return URL.createObjectURL(thumb || blob);
+  } catch (error) {
+    return URL.createObjectURL(blob);
+  }
+}
+
+function applyThumbnail(id) {
+  const url = thumbnailUrls.get(id);
+  if (!url) return;
+
+  document.querySelectorAll(`[data-thumb-for="${CSS.escape(id)}"]`).forEach((element) => {
+    element.classList.add("has-thumb");
+    element.innerHTML = `<img class="document-thumb" src="${escapeHTML(url)}" alt="" decoding="async">`;
+  });
+}
+
+async function prepareThumbnails(items) {
+  const currentIds = new Set(items.map((doc) => doc.id));
+
+  for (const [id, url] of thumbnailUrls) {
+    if (!currentIds.has(id)) {
+      URL.revokeObjectURL(url);
+      thumbnailUrls.delete(id);
+    }
+  }
+
+  for (const doc of items) {
+    if (!isImageDoc(doc) || thumbnailUrls.has(doc.id) || thumbnailPending.has(doc.id)) {
+      continue;
+    }
+
+    thumbnailPending.add(doc.id);
+
+    try {
+      const blob = await getDocumentFile(doc.id);
+
+      if (blob) {
+        thumbnailUrls.set(doc.id, await makeThumbnail(blob));
+        applyThumbnail(doc.id);
+      }
+    } catch (error) {
+      console.warn("Não foi possível gerar a miniatura:", error);
+    } finally {
+      thumbnailPending.delete(doc.id);
+    }
+  }
+}
+
+function documentVisual(doc) {
+  const kind = fileKind(doc);
+  const thumb = thumbnailUrls.get(doc.id);
+  const thumbAttr = isImageDoc(doc) ? ` data-thumb-for="${escapeHTML(doc.id)}"` : "";
+
+  const inner = thumb
+    ? `<img class="document-thumb" src="${escapeHTML(thumb)}" alt="" decoding="async">`
+    : fileBadge(kind);
+
+  return `
+    <button type="button" class="document-visual ${kind.cls}${thumb ? " has-thumb" : ""}"${thumbAttr}
+      data-action="open-doc" data-id="${escapeHTML(doc.id)}"
+      aria-label="Abrir ${escapeHTML(documentName(doc))}">${inner}</button>
+  `;
+}
+
 function renderDocumentItems(items) {
   if (!items.length) {
     return `<p class="empty-state">Nenhum documento adicionado.</p>`;
@@ -1600,7 +1738,7 @@ function renderDocumentItems(items) {
 
   return items.map((doc) => `
     <div class="document-item">
-      <div class="document-icon">▤</div>
+      ${documentVisual(doc)}
 
       <div class="document-info">
         <strong>${escapeHTML(documentName(doc))}</strong>
@@ -1677,6 +1815,8 @@ async function refreshDocuments() {
   if ($("workspaceSection")?.classList.contains("active")) {
     renderWorkspace();
   }
+
+  prepareThumbnails(documents);
 }
 
 async function handleDocumentUpload(file, projectId, category) {

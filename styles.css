@@ -2372,3 +2372,113 @@ body[data-theme="light"] .workspace-header {
   white-space: nowrap;
   border: 0;
 }
+
+/* =================================
+   DOCUMENTOS — MINIATURAS E ÍCONES POR TIPO
+================================= */
+
+.document-item {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  grid-template-areas:
+    "visual info"
+    "actions actions";
+  align-items: center;
+  gap: 12px 14px;
+}
+
+.document-item .document-info {
+  grid-area: info;
+}
+
+.document-item .document-info strong {
+  font-size: 13px;
+}
+
+.document-item .document-info small {
+  font-size: 11px;
+}
+
+.document-item .document-actions {
+  grid-area: actions;
+  width: 100%;
+}
+
+.document-visual {
+  grid-area: visual;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  overflow: hidden;
+  background: rgba(130, 150, 180, .12);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: transform .2s, border-color .2s;
+}
+
+.document-visual:hover {
+  transform: translateY(-2px);
+  border-color: var(--blue);
+}
+
+.document-visual.has-thumb {
+  background: transparent;
+}
+
+.document-thumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.file-badge {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 52px;
+  color: var(--file-color, #75839B);
+}
+
+.file-badge svg {
+  width: 44px;
+  height: 52px;
+  fill: var(--file-fill, rgba(117, 131, 155, .14));
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.file-badge b {
+  position: absolute;
+  right: 0;
+  bottom: 9px;
+  left: 0;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.file-pdf { --file-color: #D64545; --file-fill: rgba(214, 69, 69, .14); }
+.file-doc { --file-color: #2B6CE0; --file-fill: rgba(43, 108, 224, .14); }
+.file-txt { --file-color: #75839B; --file-fill: rgba(117, 131, 155, .16); }
+.file-svg { --file-color: #8268E8; --file-fill: rgba(130, 104, 232, .14); }
+.file-img { --file-color: #168A65; --file-fill: rgba(22, 138, 101, .14); }
+.file-other { --file-color: #75839B; --file-fill: rgba(117, 131, 155, .14); }
+
+@media (min-width: 700px) {
+  .document-item {
+    grid-template-columns: 72px minmax(0, 1fr) auto;
+    grid-template-areas: "visual info actions";
+  }
+
+  .document-item .document-actions {
+    width: auto;
+  }
+}

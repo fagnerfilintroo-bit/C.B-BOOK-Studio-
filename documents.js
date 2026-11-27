@@ -201,6 +201,11 @@ export async function listDocuments(projectId = "") {
    ABRIR OU BAIXAR DOCUMENTO
 ================================= */
 
+export async function getDocumentFile(id) {
+  const record = await getDocumentRecord(id);
+  return record?.file || null;
+}
+
 export async function openDocument(documentOrId) {
   const id = typeof documentOrId === "string"
     ? documentOrId
